@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/fatih/color"
@@ -21,6 +22,7 @@ type cliOpts struct {
 
 func main() {
 	opts := cliOpts{}
+
 	flag.BoolVar(&opts.version, "version", false, "Print version information")
 	flag.BoolVar(&opts.verbose, "verbose", false, "Print verbose information")
 	flag.Parse()
@@ -32,23 +34,23 @@ func main() {
 	if opts.repoPath != "" {
 		if err := setBumpWd(opts.repoPath); err != nil {
 			color.Red("Failed to change to repository directory")
-			return
+			os.Exit(1)
 		}
 	}
 
 	// if ok, err := isDefaultBranch(); err != nil {
 	// 	color.Red("Failed to check branch")
-	// 	return
+	// 	os.Exit(1)
 	// } else if !ok {
 	// 	color.Red("Not on default branch")
 	// 	fmt.Printf("Switch to default branch (%s) first before run bump tool\n", strings.Join(defaultBranches, ","))
-	// 	return
+	// 	os.Exit(1)
 	// }
 
 	// dirt, err := checkLocalChanges()
 	// if err != nil {
 	// 	color.Red("Failed to check local changes")
-	// 	return
+	// 	os.Exit(1)
 	// }
 	// if dirt {
 	// 	color.Red("Local changes detected")
@@ -61,7 +63,7 @@ func main() {
 	// 	if opts.verbose {
 	// 		fmt.Println(err)
 	// 	}
-	// 	return
+	// 	os.Exit(1)
 	// }
 
 	// if needFetch {
@@ -76,7 +78,7 @@ func main() {
 		if opts.verbose {
 			fmt.Println(err)
 		}
-		return
+		os.Exit(1)
 	}
 
 	var nextVer *semver.Version
@@ -89,7 +91,7 @@ func main() {
 			if opts.verbose {
 				fmt.Println(err)
 			}
-			return
+			os.Exit(1)
 		}
 		nv := curVer.IncPatch()
 		nextVer = &nv
