@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            name="theme-color"
+            content="#4d9ba6"
+            media="(prefers-color-scheme: light)"
+        />
+        <meta
+            name="theme-color"
+            content="#4d9ba6"
+            media="(prefers-color-scheme: dark)"
+        />
+        <title>Bump - Semver Tag Management for Git</title>
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/recursive/1.0.5/recursive.css"
+            rel="stylesheet"
+        />
+        <style>
+            /* Base styles and variables */
+            :root {
+                --bg-color: #f8f5f2;
+                --text-color: #4a4236;
+                --primary-color: #4d9ba6;
+                --secondary-color: #4d9ba6; /* Same as primary for consistent header/nav */
+                --code-bg: #f0ece8;
+                --border-color: #e0d8d0;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --bg-color: #2d2a24;
+                    --text-color: #e8e1d9;
+                    --primary-color: #4d9ba6;
+                    --secondary-color: #4d9ba6; /* Same as primary for consistent header/nav */
+                    --code-bg: #3a3631;
+                    --border-color: #4a4236;
+                }
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Recursive", sans-serif;
+                line-height: 1.6;
+                color: var(--text-color);
+                background-color: var(--bg-color);
+            }
+
+            header {
+                background-color: var(--primary-color);
+                color: white;
+                padding: 2rem 0;
+                text-align: center;
+            }
+
+            .container {
+                max-width: 900px;
+                margin: 0 auto;
+                padding: 0 1.5rem;
+            }
+
+            nav {
+                display: flex;
+                justify-content: center;
+                padding: 1rem 0;
+                background-color: var(--secondary-color);
+            }
+
+            nav a {
+                color: white;
+                text-decoration: none;
+                margin: 0 1rem;
+                font-family: "Recursive", sans-serif;
+            }
+
+            section {
+                padding: 2rem 0;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            h1,
+            h2,
+            h3 {
+                margin-bottom: 1rem;
+                line-height: 1.2;
+                font-family: "Recursive", sans-serif;
+                font-variation-settings:
+                    "MONO" 0,
+                    "CASL" 0.5,
+                    "wght" 600,
+                    "slnt" 0,
+                    "CRSV" 0.5;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            h2 {
+                font-size: 1.8rem;
+                margin-top: 2rem;
+            }
+
+            h3 {
+                font-size: 1.4rem;
+                margin-top: 1.5rem;
+            }
+
+            p {
+                margin-bottom: 1.5rem;
+            }
+
+            code {
+                font-family: "Recursive", monospace;
+                font-variation-settings:
+                    "MONO" 1,
+                    "CASL" 0,
+                    "wght" 400,
+                    "slnt" 0,
+                    "CRSV" 0;
+                background-color: var(--code-bg);
+                padding: 0.2rem 0.4rem;
+                border-radius: 3px;
+                font-size: 0.9rem;
+            }
+
+            pre {
+                background-color: var(--code-bg);
+                padding: 1rem;
+                border-radius: 5px;
+                overflow-x: auto;
+                margin-bottom: 1.5rem;
+                border: 1px solid var(--border-color);
+            }
+
+            pre code {
+                background-color: transparent;
+                padding: 0;
+            }
+
+            .example {
+                margin-bottom: 2rem;
+            }
+
+            .button {
+                display: inline-block;
+                background-color: var(--primary-color);
+                color: white;
+                padding: 0.75rem 1.5rem;
+                border-radius: 4px;
+                text-decoration: none;
+                margin: 1rem 0;
+                font-family: "Recursive", sans-serif;
+            }
+
+            footer {
+                background-color: var(--primary-color);
+                color: white;
+                padding: 2rem 0;
+                text-align: center;
+                margin-top: 2rem;
+            }
+
+            footer a {
+                color: white;
+                margin: 0 0.5rem;
+            }
+
+            @media (max-width: 768px) {
+                h1 {
+                    font-size: 2rem;
+                }
+
+                h2 {
+                    font-size: 1.5rem;
+                }
+
+                nav {
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+                nav a {
+                    margin: 0.5rem 0;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="container">
+                <h1>Bump</h1>
+                <p>Semver Tag Management for Git Repositories</p>
+            </div>
+        </header>
+
+        <nav>
+            <a href="#about">About</a>
+            <a href="#install">Installation</a>
+            <a href="#usage">Usage</a>
+            <a href="#examples">Examples</a>
+            <a href="#contribute">Contribute</a>
+            <a href="https://github.com/flaticols/bump">GitHub</a>
+        </nav>
+
+        <main class="container">
+            <section id="about">
+                <h2>About</h2>
+                <p>
+                    Bump is a lightweight command-line tool for managing
+                    semantic versioning tags in Git repositories. It automates
+                    version increments following semver standards, making it
+                    easy to maintain proper versioning in your projects.
+                </p>
+                <p>
+                    With Bump, you can quickly increment major, minor, or patch
+                    versions with simple commands, streamlining your release
+                    process.
+                </p>
+            </section>
+
+            <section id="install">
+                <h2>Installation</h2>
+
+                <h3>Using Go</h3>
+                <pre><code>$ go install github.com/flaticols/bump</code></pre>
+
+                <h3>Using Homebrew</h3>
+                <pre><code>$ brew tap flaticols/tap
+$ brew install bump</code></pre>
+
+                <h3>From Source</h3>
+                <pre><code>$ git clone https://github.com/flaticols/bump.git
+$ cd bump
+$ make install</code></pre>
+
+                <a
+                    href="https://github.com/flaticols/bump/releases"
+                    class="button"
+                    >Download Binary</a
+                >
+            </section>
+
+            <section id="usage">
+                <h2>Usage</h2>
+
+                <p>Basic syntax:</p>
+
+                <pre><code>$ bump [command] [options]</code></pre>
+
+                <h3>Commands</h3>
+
+                <h4>Major Version</h4>
+                <p>Increment the major version (for breaking changes)</p>
+                <pre><code>$ bump major
+# e.g., 1.2.3 → 2.0.0</code></pre>
+
+                <h4>Minor Version</h4>
+                <p>Increment the minor version (for new features)</p>
+                <pre><code>$ bump minor
+# e.g., 1.2.3 → 1.3.0</code></pre>
+
+                <h4>Patch Version</h4>
+                <p>Increment the patch version (for bug fixes)</p>
+                <pre><code>$ bump patch
+# e.g., 1.2.3 → 1.2.4</code></pre>
+
+                <h4>Current Version</h4>
+                <p>Show the current version</p>
+                <pre><code>$ bump current
+v1.2.3</code></pre>
+            </section>
+
+            <section id="examples">
+                <h2>Examples</h2>
+
+                <div class="example">
+                    <h3>Creating a pre-release version</h3>
+                    <pre><code>$ bump minor --pre alpha
+# e.g., 1.2.3 → 1.3.0-alpha.1</code></pre>
+                </div>
+
+                <div class="example">
+                    <h3>Adding a tag message</h3>
+                    <pre><code>$ bump patch -m "Fix critical bug in authentication"
+# Creates an annotated tag with the message</code></pre>
+                </div>
+
+                <div class="example">
+                    <h3>Creating a custom version</h3>
+                    <pre><code>$ bump set 2.5.0
+# Sets version to exactly 2.5.0</code></pre>
+                </div>
+
+                <div class="example">
+                    <h3>Viewing version history</h3>
+                    <pre><code>$ bump history
+v1.2.4 - 2023-06-15
+v1.2.3 - 2023-06-10
+v1.2.2 - 2023-06-05
+v1.1.0 - 2023-05-20
+v1.0.0 - 2023-05-01</code></pre>
+                </div>
+            </section>
+
+            <section id="contribute">
+                <h2>Contribute</h2>
+
+                <p>
+                    We welcome contributions to Bump! Whether it's bug reports,
+                    feature requests, or code contributions.
+                </p>
+
+                <ol>
+                    <li>Create a branch directly from <code>main</code></li>
+                    <li>Make your changes</li>
+                    <li>Submit a pull request to <code>main</code></li>
+                    <li>Address review comments if any</li>
+                    <li>Once approved, your changes will be merged</li>
+                </ol>
+            </section>
+        </main>
+
+        <footer>
+            <div class="container">
+                <p>
+                    Bump CLI © 2025 by
+                    <a
+                        href="https://flaticons.dev"
+                        style="color: white; text-decoration: underline"
+                        >Denis Panfilov</a
+                    >
+                    | MIT License
+                </p>
+                <p>
+                    <a
+                        href="https://github.com/flaticols/bump/blob/main/README.md"
+                        >Documentation</a
+                    >
+                    |
+                    <a href="https://github.com/flaticols/bump/issues"
+                        >Issues</a
+                    >
+                </p>
+            </div>
+        </footer>
+    </body>
+</html>
