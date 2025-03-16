@@ -7,8 +7,13 @@ import (
 	"strings"
 )
 
+var (
+	ErrNoTagsFound = fmt.Errorf("no tags found")
+)
+
 var defaultBranches = []string{"main", "master", "develop", "feature", "release", "hotfix", "bugfix", "latest"}
 
+// checkLocalChanges checks for uncommitted changes in the local Git repository by running `git status --porcelain` and returns the status.
 func checkLocalChanges() (bool, error) {
 	// Run git status --porcelain
 	cmd := exec.Command("git", "status", "--porcelain")
@@ -21,6 +26,8 @@ func checkLocalChanges() (bool, error) {
 	return len(strings.TrimSpace(string(output))) > 0, nil
 }
 
+// checkRemoteChanges checks if there are changes in the remote repository that are not present in the local repository.
+// It fetches the latest changes from the remote and compares the local branch with the tracking branch to detect differences.
 func checkRemoteChanges() (bool, error) {
 	// Fetch the latest changes from remote
 	fetchCmd := exec.Command("git", "fetch", "origin")
@@ -55,6 +62,7 @@ func checkRemoteChanges() (bool, error) {
 	return len(strings.TrimSpace(string(output))) > 0, nil
 }
 
+// isDefaultBranch checks if the current Git branch is one of the predefined default branches and returns a boolean and an error if one occurs.
 func isDefaultBranch() (bool, error) {
 	// Get the current branch name
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
@@ -67,8 +75,9 @@ func isDefaultBranch() (bool, error) {
 	return slices.Contains(defaultBranches, b), nil
 }
 
-// GetLatestGitTag returns the latest Git tag or a default value if no tags exist
-func getLatestGitTag() (string, bool, error) {
+// getLatestGitTag retrieves the latest Git tag from the current repository.
+// Returns the tag as a string, a boolean indicating initialization state, and an error if unsuccessful.
+func getLatestGitTag() (string, error) {
 	// Run the git command to get the latest tag
 	cmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
 	output, err := cmd.CombinedOutput()
@@ -80,16 +89,17 @@ func getLatestGitTag() (string, bool, error) {
 		if strings.Contains(errOutput, "No names found") ||
 			strings.Contains(errOutput, "No tags") ||
 			strings.Contains(errOutput, "fatal: No names found") {
-			return "", true, nil
+			return "", ErrNoTagsFound
 		}
-		return "", false, fmt.Errorf("error getting git tag: %v - %s", err, string(output))
+		return "", fmt.Errorf("error getting git tag: %v - %s", err, string(output))
 	}
 
 	// Trim the output to remove newlines and whitespace
 	tag := strings.TrimSpace(string(output))
-	return tag, false, nil
+	return tag, nil
 }
 
+// setGitTag creates a new Git tag with the specified name and returns an error if the process fails or the tag could not be created.
 func setGitTag(tag string) error {
 	cmd := exec.Command("git", "tag", tag)
 	output, err := cmd.CombinedOutput()
@@ -99,6 +109,7 @@ func setGitTag(tag string) error {
 	return nil
 }
 
+// pushGitTag pushes the specified Git tag to the origin remote repository. It returns an error if the command execution fails.
 func pushGitTag(tag string) error {
 	cmd := exec.Command("git", "push", "origin", tag)
 	output, err := cmd.CombinedOutput()
