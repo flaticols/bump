@@ -2,6 +2,9 @@
 
 A command-line tool to easily bump the git tag version of your project using semantic versioning.
 
+> [!WARNING]
+> In development, so bugs may occur.
+
 ## Installation
 ### Homebrew
 
