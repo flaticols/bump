@@ -1,20 +1,36 @@
-package main
+package internal
 
 import (
 	"fmt"
 	"os/exec"
 	"slices"
 	"strings"
+
+	"github.com/Masterminds/semver/v3"
 )
 
-var (
-	ErrNoTagsFound = fmt.Errorf("no tags found")
-)
+const DefaultVersion = "0.0.1"
+
+type SemVerTagError struct {
+	NoTags bool
+	Tag    string
+	Msg    string
+}
+
+func (e SemVerTagError) Error() string {
+	if e.Msg != "" {
+		return fmt.Sprintf("error parsing semver tag: '%s': %s", e.Tag, e.Msg)
+	}
+	return fmt.Sprintf("error parsing semver tag: '%s'", e.Tag)
+}
 
 var defaultBranches = []string{"main", "master", "develop", "feature", "release", "hotfix", "bugfix", "latest"}
 
-// checkLocalChanges checks for uncommitted changes in the local Git repository by running `git status --porcelain` and returns the status.
-func checkLocalChanges() (bool, error) {
+type GitState struct {
+}
+
+// CheckLocalChanges checks for uncommitted changes in the local Git repository by running `git status --porcelain` and returns the status.
+func (gs *GitState) CheckLocalChanges() (bool, error) {
 	// Run git status --porcelain
 	cmd := exec.Command("git", "status", "--porcelain")
 	output, err := cmd.Output()
@@ -26,9 +42,9 @@ func checkLocalChanges() (bool, error) {
 	return len(strings.TrimSpace(string(output))) > 0, nil
 }
 
-// checkRemoteChanges checks if there are changes in the remote repository that are not present in the local repository.
+// CheckRemoteChanges checks if there are changes in the remote repository that are not present in the local repository.
 // It fetches the latest changes from the remote and compares the local branch with the tracking branch to detect differences.
-func checkRemoteChanges() (bool, error) {
+func (gs *GitState) CheckRemoteChanges() (bool, error) {
 	// Fetch the latest changes from remote
 	fetchCmd := exec.Command("git", "fetch", "origin")
 	if err := fetchCmd.Run(); err != nil {
@@ -62,17 +78,17 @@ func checkRemoteChanges() (bool, error) {
 	return len(strings.TrimSpace(string(output))) > 0, nil
 }
 
-// isDefaultBranch checks if the current Git branch is one of the predefined default branches and returns a boolean and an error if one occurs.
-func isDefaultBranch() (bool, error) {
+// IsDefaultBranch checks if the current Git branch is one of the predefined default branches and returns a boolean and an error if one occurs.
+func (gs *GitState) IsDefaultBranch() (string, bool, error) {
 	// Get the current branch name
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
 	output, err := cmd.Output()
 	if err != nil {
-		return false, fmt.Errorf("failed to get current branch: %w", err)
+		return "", false, fmt.Errorf("failed to get current branch: %w", err)
 	}
 
 	b := strings.TrimSpace(string(output))
-	return slices.Contains(defaultBranches, b), nil
+	return b, slices.Contains(defaultBranches, b), nil
 }
 
 // getLatestGitTag retrieves the latest Git tag from the current repository.
@@ -89,7 +105,7 @@ func getLatestGitTag() (string, error) {
 		if strings.Contains(errOutput, "No names found") ||
 			strings.Contains(errOutput, "No tags") ||
 			strings.Contains(errOutput, "fatal: No names found") {
-			return "", ErrNoTagsFound
+			return "", SemVerTagError{NoTags: true}
 		}
 		return "", fmt.Errorf("error getting git tag: %v - %s", err, string(output))
 	}
@@ -99,8 +115,8 @@ func getLatestGitTag() (string, error) {
 	return tag, nil
 }
 
-// setGitTag creates a new Git tag with the specified name and returns an error if the process fails or the tag could not be created.
-func setGitTag(tag string) error {
+// SetGitTag creates a new Git tag with the specified name and returns an error if the process fails or the tag could not be created.
+func (gs *GitState) SetGitTag(tag string) error {
 	cmd := exec.Command("git", "tag", tag)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -109,12 +125,32 @@ func setGitTag(tag string) error {
 	return nil
 }
 
-// pushGitTag pushes the specified Git tag to the origin remote repository. It returns an error if the command execution fails.
-func pushGitTag(tag string) error {
+// PushGitTag pushes the specified Git tag to the origin remote repository. It returns an error if the command execution fails.
+func (gs *GitState) PushGitTag(tag string) error {
 	cmd := exec.Command("git", "push", "origin", tag)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error pushing git tag: %v - %s", err, string(output))
 	}
 	return nil
+}
+
+// GetCurrentVersion retrieves the current version state from Git tags.
+// Returns the current version as a semver.Version and an error if unsuccessful.
+func (gs *GitState) GetCurrentVersion() (*semver.Version, error) {
+	tag, err := getLatestGitTag()
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove 'v' prefix if present
+	tag = strings.TrimPrefix(tag, "v")
+
+	// Parse the version string
+	version, err := semver.NewVersion(tag)
+	if err != nil {
+		return nil, SemVerTagError{Tag: tag, Msg: err.Error()}
+	}
+
+	return version, nil
 }
