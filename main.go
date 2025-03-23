@@ -13,6 +13,7 @@ var (
 )
 
 func main() {
+	// Create color printers for formatted output
 	opts := &cmd.Options{
 		ErrPrinter:     color.New(color.FgRed).SprintfFunc(),
 		InfoPrinter:    color.New(color.FgWhite).SprintfFunc(),
@@ -21,9 +22,10 @@ func main() {
 		GitDetailer:    &internal.GitState{},
 	}
 
+	// Create the root command
 	rootCmd := cmd.CreateRootCmd(opts)
+	// Execute the command
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
-	//color.Green("Successfully bumped version to v%s", ver.String())
 }

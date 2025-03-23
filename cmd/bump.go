@@ -24,8 +24,11 @@ type ColorTextPrinter func(format string, a ...interface{}) string
 type GitStater interface {
 	IsDefaultBranch() (string, bool, error)
 	CheckLocalChanges() (bool, error)
-	CheckRemoteChanges() (bool, error)
+	CheckRemoteChanges(allowNoRemotes bool) (bool, error)
+	HasUnpushedChanges(currentBranch string) (bool, error)
 	GetCurrentVersion() (*semver.Version, error)
+	SetGitTag(tag string) error
+	PushGitTag(tag string) error
 }
 
 type Options struct {
@@ -44,6 +47,7 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			verbose, _ := cmd.Flags().GetBool("verbose")
 			repoPath, _ := cmd.PersistentFlags().GetString("repo")
+			allowNoRemotes, _ := cmd.PersistentFlags().GetBool("no-remotes")
 			if repoPath == "" {
 				wd, err := os.Getwd()
 				if err != nil {
@@ -63,7 +67,8 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 				os.Exit(1)
 			}
 
-			if b, yes, err := opts.GitDetailer.IsDefaultBranch(); err != nil {
+			b, yes, err := opts.GitDetailer.IsDefaultBranch()
+			if err != nil {
 				fmt.Println(opts.ErrPrinter(err.Error()))
 				os.Exit(1)
 			} else if !yes {
@@ -83,7 +88,7 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 				fmt.Println(opts.OkPrinter("no uncommitted changes"))
 			}
 
-			if yes, err := opts.GitDetailer.CheckRemoteChanges(); err != nil {
+			if yes, err := opts.GitDetailer.CheckRemoteChanges(allowNoRemotes); err != nil {
 				fmt.Println(opts.ErrPrinter(err.Error()))
 				os.Exit(1)
 			} else if yes {
@@ -93,8 +98,20 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 				fmt.Println(opts.OkPrinter("no remote changes"))
 			}
 
+			if yes, err := opts.GitDetailer.HasUnpushedChanges(b); err != nil {
+				fmt.Println(opts.ErrPrinter(err.Error()))
+				os.Exit(1)
+			} else if yes {
+				fmt.Println(opts.ErrPrinter("unpushed changes"))
+				os.Exit(1)
+			} else {
+				fmt.Println(opts.OkPrinter("no unpushed changes"))
+			}
+
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			allowNoRemotes, _ := cmd.PersistentFlags().GetBool("no-remotes")
+
 			ver, err := opts.GitDetailer.GetCurrentVersion()
 			var tagErr internal.SemVerTagError
 			var nextVer *semver.Version
@@ -127,6 +144,7 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 				v := ver.IncMinor()
 				nextVer = &v
 			case patch:
+				fallthrough
 			default:
 				v := ver.IncPatch()
 				nextVer = &v
@@ -138,16 +156,27 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 				fmt.Printf("set version %s\n", opts.OkPrinter(nextVer.String()))
 			}
 
+			tag := fmt.Sprintf("v%s", nextVer.String())
+			err = opts.GitDetailer.SetGitTag(tag)
+			if err != nil {
+				return err
+			}
+
+			if !allowNoRemotes {
+				err = opts.GitDetailer.PushGitTag(tag)
+				if err != nil {
+					return err
+				}
+			}
+
 			return nil
 		},
 	}
 
 	cmd.PersistentFlags().String("repo", "", "path to the repository")
 	cmd.PersistentFlags().Bool("verbose", false, "enable verbose output")
+	cmd.PersistentFlags().Bool("no-remotes", false, "if no-remotes is set, bump will not error if no remotes are found")
 
-	setCmd := CreateSetCmd()
-
-	cmd.AddCommand(setCmd)
 	cmd.SetVersionTemplate("{{.Version}}\n")
 	cmd.Version = handleVersionCommand()
 

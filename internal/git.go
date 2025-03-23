@@ -44,33 +44,51 @@ func (gs *GitState) CheckLocalChanges() (bool, error) {
 
 // CheckRemoteChanges checks if there are changes in the remote repository that are not present in the local repository.
 // It fetches the latest changes from the remote and compares the local branch with the tracking branch to detect differences.
-func (gs *GitState) CheckRemoteChanges() (bool, error) {
+func (gs *GitState) CheckRemoteChanges(allowNoRemotes bool) (bool, error) {
+	// First check if remotes exist
+	remoteCmd := exec.Command("git", "remote")
+	remoteOutput, err := remoteCmd.Output()
+
+	// If no remotes exist
+	if err != nil || len(strings.TrimSpace(string(remoteOutput))) == 0 {
+		if !allowNoRemotes {
+			return false, fmt.Errorf("no remotes found in repository")
+		}
+		// If we don't want to error on no remotes, just return no changes
+		return false, nil
+	}
+
 	// Fetch the latest changes from remote
 	fetchCmd := exec.Command("git", "fetch", "origin")
 	if err := fetchCmd.Run(); err != nil {
 		return false, fmt.Errorf("failed to fetch from remote: %w", err)
 	}
 
-	// Check if there are remote changes not in local
+	// Get current branch
+	branchCmd := exec.Command("git", "symbolic-ref", "HEAD")
+	branchOutput, branchErr := branchCmd.Output()
+
+	// If we can't get the branch, try the fallback
+	if branchErr != nil {
+		fallbackCmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+		fallbackOutput, fallbackErr := fallbackCmd.Output()
+		if fallbackErr != nil {
+			return false, fmt.Errorf("failed to get current branch: %w", fallbackErr)
+		}
+		branchOutput = fallbackOutput
+	}
+
+	currentBranch := strings.TrimSpace(string(branchOutput))
+	currentBranch = strings.TrimPrefix(currentBranch, "refs/heads/")
+
+	// Check if there are remote changes not in local, first try with origin/main
 	cmd := exec.Command("git", "log", "HEAD..origin/main", "--oneline")
 	output, err := cmd.Output()
 	if err != nil {
-		// Check if the error is due to invalid HEAD..origin/main reference
-		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() != 0 {
-			// Try with default branch
-			cmd = exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
-			branchOutput, branchErr := cmd.Output()
-			if branchErr != nil {
-				return false, fmt.Errorf("failed to get current branch: %w", branchErr)
-			}
-
-			currentBranch := strings.TrimSpace(string(branchOutput))
-			cmd = exec.Command("git", "log", fmt.Sprintf("HEAD..origin/%s", currentBranch), "--oneline")
-			output, err = cmd.Output()
-			if err != nil {
-				return false, fmt.Errorf("failed to check remote changes: %w", err)
-			}
-		} else {
+		// Try with current branch
+		cmd = exec.Command("git", "log", fmt.Sprintf("HEAD..origin/%s", currentBranch), "--oneline")
+		output, err = cmd.Output()
+		if err != nil {
 			return false, fmt.Errorf("failed to check remote changes: %w", err)
 		}
 	}
@@ -104,11 +122,42 @@ func (gs *GitState) IsDefaultBranch() (string, bool, error) {
 	return b, slices.Contains(defaultBranches, b), nil
 }
 
+func (gs *GitState) HasUnpushedChanges(currentBranch string) (bool, error) {
+	remoteCmd := exec.Command("git", "remote")
+	remoteOutput, err := remoteCmd.Output()
+
+	if err != nil || len(strings.TrimSpace(string(remoteOutput))) == 0 {
+		return false, nil
+	}
+
+	cmd := exec.Command("git", "rev-list", "--count", fmt.Sprintf("origin/%s..%s", currentBranch, currentBranch))
+	output, err := cmd.Output()
+
+	if err != nil {
+		checkRemoteBranchCmd := exec.Command("git", "ls-remote", "--heads", "origin", currentBranch)
+		remoteBranchOutput, _ := checkRemoteBranchCmd.Output()
+
+		if len(strings.TrimSpace(string(remoteBranchOutput))) == 0 {
+			checkLocalCommitsCmd := exec.Command("git", "rev-list", "--count", currentBranch)
+			localCommitsOutput, localErr := checkLocalCommitsCmd.Output()
+			if localErr != nil {
+				return false, fmt.Errorf("failed to check local commits: %w", localErr)
+			}
+
+			count := strings.TrimSpace(string(localCommitsOutput))
+			return count != "0", nil
+		}
+		return false, fmt.Errorf("failed to check unpushed changes: %w", err)
+	}
+	count := strings.TrimSpace(string(output))
+	return count != "0", nil
+}
+
 // getLatestGitTag retrieves the latest Git tag from the current repository.
 // Returns the tag as a string, a boolean indicating initialization state, and an error if unsuccessful.
 func getLatestGitTag() (string, error) {
-	// Run the git command to get the latest tag
-	cmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
+	// Run git command to get all tags
+	cmd := exec.Command("git", "tag")
 	output, err := cmd.CombinedOutput()
 
 	// If the command failed, check if it's because there are no tags
@@ -120,12 +169,38 @@ func getLatestGitTag() (string, error) {
 			strings.Contains(errOutput, "fatal: No names found") {
 			return "", SemVerTagError{NoTags: true}
 		}
-		return "", fmt.Errorf("error getting git tag: %v - %s", err, string(output))
+		return "", fmt.Errorf("error getting git tags: %v - %s", err, string(output))
 	}
 
-	// Trim the output to remove newlines and whitespace
-	tag := strings.TrimSpace(string(output))
-	return tag, nil
+	// If there are no tags at all
+	if len(strings.TrimSpace(string(output))) == 0 {
+		return "", SemVerTagError{NoTags: true}
+	}
+
+	// Split the output by newlines
+	tags := strings.Split(strings.TrimSpace(string(output)), "\n")
+
+	var highestSemver *semver.Version
+	var highestTag string
+
+	// Find the highest semver tag
+	for _, tag := range tags {
+		v, err := semver.NewVersion(tag)
+		if err == nil {
+			// This is a valid semver tag
+			if highestSemver == nil || v.GreaterThan(highestSemver) {
+				highestSemver = v
+				highestTag = tag
+			}
+		}
+	}
+
+	if highestSemver == nil {
+		// No valid semver tags found
+		return "", SemVerTagError{Msg: "not valid semver tags found"}
+	}
+
+	return highestTag, nil
 }
 
 // SetGitTag creates a new Git tag with the specified name and returns an error if the process fails or the tag could not be created.
