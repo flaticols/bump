@@ -3,10 +3,27 @@
 A command-line tool to easily bump the git tag version of your project using semantic versioning.
 
 ## Installation
+### Homebrew
+
+#### Add tap
+```bash
+brew tap flaticols/apps
+```
+
+#### Install
+
+```bash
+brew install flaticols/apps/bump
+```
+
+### Go
 
 ```bash
 go install github.com/flaticols/bump@latest
 ```
+
+
+
 
 ## Usage
 
