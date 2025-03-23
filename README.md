@@ -16,7 +16,6 @@ bump          # Bumps patch version (e.g., 1.2.3 -> 1.2.4)
 bump major    # Bumps major version (e.g., 1.2.3 -> 2.0.0)
 bump minor    # Bumps minor version (e.g., 1.2.3 -> 1.3.0)
 bump patch    # Bumps patch version (e.g., 1.2.3 -> 1.2.4)
-bump set 2.0.0  # Sets version to specific value
 ```
 
 ## Options
