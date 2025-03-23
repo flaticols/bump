@@ -80,11 +80,24 @@ func (gs *GitState) CheckRemoteChanges() (bool, error) {
 
 // IsDefaultBranch checks if the current Git branch is one of the predefined default branches and returns a boolean and an error if one occurs.
 func (gs *GitState) IsDefaultBranch() (string, bool, error) {
-	// Get the current branch name
+	// Try the normal approach first
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
-	output, err := cmd.Output()
+	output, err := cmd.CombinedOutput()
+
+	// If the command fails, try the fallback method
 	if err != nil {
-		return "", false, fmt.Errorf("failed to get current branch: %w", err)
+		// Try using symbolic-ref instead which works for repos without commits
+		fallbackCmd := exec.Command("git", "symbolic-ref", "HEAD")
+		fallbackOutput, fallbackErr := fallbackCmd.Output()
+
+		if fallbackErr != nil {
+			return "", false, fmt.Errorf("failed to get current branch: %w", fallbackErr)
+		}
+
+		// Remove the refs/heads/ prefix from the output
+		branchRef := strings.TrimSpace(string(fallbackOutput))
+		b := strings.TrimPrefix(branchRef, "refs/heads/")
+		return b, slices.Contains(defaultBranches, b), nil
 	}
 
 	b := strings.TrimSpace(string(output))
