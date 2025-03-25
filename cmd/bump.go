@@ -43,6 +43,7 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 	var repoDirectory string
 	var verbose bool
 	var allowNoRemotes bool
+	var strictMode bool
 	cmd := &cobra.Command{
 		Use:       "bump",
 		Args:      cobra.OnlyValidArgs,
@@ -58,47 +59,9 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 				os.Exit(1)
 			}
 
-			b, yes, err := opts.GitDetailer.IsDefaultBranch()
-			if err != nil {
-				fmt.Println(opts.ErrPrinter(err.Error()))
-				os.Exit(1)
-			} else if !yes {
-				fmt.Println(opts.ErrPrinter("not on default branch"))
-				os.Exit(1)
-			} else {
-				fmt.Println(opts.OkPrinter("on default branch: %s", b))
+			if strictMode {
+				gitStateChecks(opts, allowNoRemotes)
 			}
-
-			if yes, err := opts.GitDetailer.CheckLocalChanges(); err != nil {
-				fmt.Println(opts.ErrPrinter(err.Error()))
-				os.Exit(1)
-			} else if yes {
-				fmt.Println(opts.ErrPrinter("uncommitted changes"))
-				os.Exit(1)
-			} else {
-				fmt.Println(opts.OkPrinter("no uncommitted changes"))
-			}
-
-			if yes, err := opts.GitDetailer.CheckRemoteChanges(allowNoRemotes); err != nil {
-				fmt.Println(opts.ErrPrinter(err.Error()))
-				os.Exit(1)
-			} else if yes {
-				fmt.Println(opts.ErrPrinter("remote changes, pull first"))
-				os.Exit(1)
-			} else {
-				fmt.Println(opts.OkPrinter("no remote changes"))
-			}
-
-			if yes, err := opts.GitDetailer.HasUnpushedChanges(b); err != nil {
-				fmt.Println(opts.ErrPrinter(err.Error()))
-				os.Exit(1)
-			} else if yes {
-				fmt.Println(opts.ErrPrinter("unpushed changes"))
-				os.Exit(1)
-			} else {
-				fmt.Println(opts.OkPrinter("no unpushed changes"))
-			}
-
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			allowNoRemotes, _ := cmd.PersistentFlags().GetBool("no-remotes")
@@ -148,6 +111,7 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&repoDirectory, "repo", "r", "", "path to the repository")
 	cmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose output")
 	cmd.PersistentFlags().BoolVarP(&allowNoRemotes, "no-remotes", "l", false, "if no-remotes is set, bump will not error if no remotes are found")
+	cmd.PersistentFlags().BoolVarP(&strictMode, "strict", "s", true, "if strict is set, bump will error if git state checks are not met (default: true)")
 
 	cmd.SetVersionTemplate("{{.Version}}\n")
 	cmd.Version = handleVersionCommand()
@@ -156,6 +120,49 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 	cmd.AddCommand(undoCmd)
 
 	return cmd
+}
+
+func gitStateChecks(opts *Options, allowNoRemotes bool) {
+	b, yes, err := opts.GitDetailer.IsDefaultBranch()
+	if err != nil {
+		fmt.Println(opts.ErrPrinter(err.Error()))
+		os.Exit(1)
+	} else if !yes {
+		fmt.Println(opts.ErrPrinter("not on default branch"))
+		os.Exit(1)
+	} else {
+		fmt.Println(opts.OkPrinter("on default branch: %s", b))
+	}
+
+	if yes, err := opts.GitDetailer.CheckLocalChanges(); err != nil {
+		fmt.Println(opts.ErrPrinter(err.Error()))
+		os.Exit(1)
+	} else if yes {
+		fmt.Println(opts.ErrPrinter("uncommitted changes"))
+		os.Exit(1)
+	} else {
+		fmt.Println(opts.OkPrinter("no uncommitted changes"))
+	}
+
+	if yes, err := opts.GitDetailer.CheckRemoteChanges(allowNoRemotes); err != nil {
+		fmt.Println(opts.ErrPrinter(err.Error()))
+		os.Exit(1)
+	} else if yes {
+		fmt.Println(opts.ErrPrinter("remote changes, pull first"))
+		os.Exit(1)
+	} else {
+		fmt.Println(opts.OkPrinter("no remote changes"))
+	}
+
+	if yes, err := opts.GitDetailer.HasUnpushedChanges(b); err != nil {
+		fmt.Println(opts.ErrPrinter(err.Error()))
+		os.Exit(1)
+	} else if yes {
+		fmt.Println(opts.ErrPrinter("unpushed changes"))
+		os.Exit(1)
+	} else {
+		fmt.Println(opts.OkPrinter("no unpushed changes"))
+	}
 }
 
 // handleVersionCommand handles the version command and exits.
