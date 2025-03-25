@@ -3,12 +3,13 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/Masterminds/semver/v3"
-	"github.com/flaticols/bump/internal"
-	"github.com/spf13/cobra"
 	"os"
 	"path"
 	"runtime/debug"
+
+	"github.com/Masterminds/semver/v3"
+	"github.com/flaticols/bump/internal"
+	"github.com/spf13/cobra"
 )
 
 type semVerPart = string
@@ -19,7 +20,7 @@ const (
 	patch semVerPart = "patch"
 )
 
-type ColorTextPrinter func(format string, a ...interface{}) string
+type ColorTextPrinter func(format string, a ...any) string
 
 type GitStater interface {
 	IsDefaultBranch() (string, bool, error)
@@ -122,38 +123,19 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 						os.Exit(1)
 					}
 
-					fmt.Println(opts.WarningPrinter("no tags found, using default version %s\n", internal.DefaultVersion))
-					ver = semver.MustParse(internal.DefaultVersion)
-					nextVer = semver.MustParse(internal.DefaultVersion)
+					fmt.Println(opts.WarningPrinter("no tags found, using default version v%s\n", internal.DefaultVersion))
+					ver = semver.MustParse("0.0.0")
 				} else {
 					return err
 				}
 			}
 
-			incPart := patch
+			nextVer = createNewVersion(getIncPart(args), ver)
 
-			if len(args) > 0 {
-				incPart = args[0]
-			}
-
-			switch incPart {
-			case major:
-				v := ver.IncMajor()
-				nextVer = &v
-			case minor:
-				v := ver.IncMinor()
-				nextVer = &v
-			case patch:
-				fallthrough
-			default:
-				v := ver.IncPatch()
-				nextVer = &v
-			}
-
-			if nextVer.GreaterThan(ver) {
-				fmt.Printf("bump version %s => %s\n", opts.InfoPrinter(ver.String()), opts.OkPrinter(nextVer.String()))
+			if err != nil && tagErr.NoTags {
+				fmt.Printf("set version %s\n", opts.OkPrinter("v"+nextVer.String()))
 			} else {
-				fmt.Printf("set version %s\n", opts.OkPrinter(nextVer.String()))
+				fmt.Printf("bump version %s => %s\n", opts.InfoPrinter("v"+ver.String()), opts.OkPrinter("v"+nextVer.String()))
 			}
 
 			tag := fmt.Sprintf("v%s", nextVer.String())
@@ -187,4 +169,27 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 func handleVersionCommand() string {
 	info, _ := debug.ReadBuildInfo()
 	return info.Main.Version
+}
+
+func getIncPart(args []string) semVerPart {
+	if len(args) > 0 {
+		return args[0]
+	}
+	return patch
+}
+
+func createNewVersion(incPart semVerPart, ver *semver.Version) *semver.Version {
+	switch incPart {
+	case major:
+		v := ver.IncMajor()
+		return &v
+	case minor:
+		v := ver.IncMinor()
+		return &v
+	case patch:
+		fallthrough
+	default:
+		v := ver.IncPatch()
+		return &v
+	}
 }
