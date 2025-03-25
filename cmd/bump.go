@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 	"runtime/debug"
 
 	"github.com/Masterminds/semver/v3"
@@ -41,28 +40,19 @@ type Options struct {
 }
 
 func CreateRootCmd(opts *Options) *cobra.Command {
+	var repoDirectory string
+	var verbose bool
+	var allowNoRemotes bool
 	cmd := &cobra.Command{
 		Use:       "bump",
 		Args:      cobra.OnlyValidArgs,
 		ValidArgs: []string{major, minor, patch},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			verbose, _ := cmd.Flags().GetBool("verbose")
-			repoPath, _ := cmd.PersistentFlags().GetString("repo")
-			allowNoRemotes, _ := cmd.PersistentFlags().GetBool("no-remotes")
-			if repoPath == "" {
-				wd, err := os.Getwd()
-				if err != nil {
-					fmt.Println(opts.ErrPrinter(err.Error()))
-					os.Exit(1)
-				}
-				repoPath = wd
-			}
-
 			if verbose {
-				fmt.Printf("Working directory: %s\n", repoPath)
+				fmt.Printf("working directory: %s\n", repoDirectory)
 			}
 
-			err := os.Chdir(path.Clean(repoPath))
+			err := internal.SetBumpWd(repoDirectory)
 			if err != nil {
 				fmt.Println(opts.ErrPrinter(err.Error()))
 				os.Exit(1)
@@ -155,12 +145,15 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().String("repo", "", "path to the repository")
-	cmd.PersistentFlags().Bool("verbose", false, "enable verbose output")
-	cmd.PersistentFlags().Bool("no-remotes", false, "if no-remotes is set, bump will not error if no remotes are found")
+	cmd.PersistentFlags().StringVarP(&repoDirectory, "repo", "r", "", "path to the repository")
+	cmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose output")
+	cmd.PersistentFlags().BoolVarP(&allowNoRemotes, "no-remotes", "l", false, "if no-remotes is set, bump will not error if no remotes are found")
 
 	cmd.SetVersionTemplate("{{.Version}}\n")
 	cmd.Version = handleVersionCommand()
+
+	undoCmd := CreateUndoCmd(opts)
+	cmd.AddCommand(undoCmd)
 
 	return cmd
 }
