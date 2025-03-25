@@ -1,10 +1,11 @@
 package main
 
 import (
+	"os"
+
 	"github.com/fatih/color"
 	"github.com/flaticols/bump/cmd"
 	"github.com/flaticols/bump/internal"
-	"os"
 )
 
 var (
@@ -16,7 +17,7 @@ func main() {
 	// Create color printers for formatted output
 	opts := &cmd.Options{
 		ErrPrinter:     color.New(color.FgRed).SprintfFunc(),
-		InfoPrinter:    color.New(color.FgWhite).SprintfFunc(),
+		InfoPrinter:    color.New(color.FgBlue).SprintfFunc(),
 		WarningPrinter: color.New(color.FgYellow).SprintfFunc(),
 		OkPrinter:      color.New(color.FgGreen).SprintfFunc(),
 		GitDetailer:    &internal.GitState{},
