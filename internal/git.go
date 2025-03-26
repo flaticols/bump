@@ -242,3 +242,22 @@ func (gs *GitState) GetCurrentVersion() (*semver.Version, error) {
 
 	return version, nil
 }
+
+func (gs *GitState) RemoveLocalGitTag(tag string) error {
+	cmd := exec.Command("git", "tag", "-d", tag)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error removing local git tag: %v - %s", err, string(output))
+	}
+	return nil
+}
+
+// removeRemoteGitTag deletes a git tag from the remote repository
+func (gs *GitState) RemoveRemoteGitTag(tag string) error {
+	cmd := exec.Command("git", "push", "--delete", "origin", tag)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error removing remote git tag: %v - %s", err, string(output))
+	}
+	return nil
+}

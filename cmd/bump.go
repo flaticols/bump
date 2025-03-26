@@ -20,6 +20,7 @@ const (
 )
 
 type ColorTextPrinter func(format string, a ...any) string
+type VersionPrinter func(string) string
 
 type GitStater interface {
 	IsDefaultBranch() (string, bool, error)
@@ -27,56 +28,69 @@ type GitStater interface {
 	CheckRemoteChanges(allowNoRemotes bool) (bool, error)
 	HasUnpushedChanges(currentBranch string) (bool, error)
 	GetCurrentVersion() (*semver.Version, error)
-	SetGitTag(tag string) error
-	PushGitTag(tag string) error
+	SetGitTag(string) error
+	PushGitTag(string) error
+	RemoveLocalGitTag(string) error
+	RemoveRemoteGitTag(string) error
+}
+
+type Symbols struct {
+	Ok      string
+	Warning string
+	Error   string
+	Bullet  string
+}
+
+type TextPrinters struct {
+	Err     ColorTextPrinter
+	Info    ColorTextPrinter
+	Warning ColorTextPrinter
+	Ok      ColorTextPrinter
+	Version VersionPrinter
+	Symbols Symbols
 }
 
 type Options struct {
-	ErrPrinter     ColorTextPrinter
-	InfoPrinter    ColorTextPrinter
-	WarningPrinter ColorTextPrinter
-	OkPrinter      ColorTextPrinter
-	GitDetailer    GitStater
+	P                  TextPrinters
+	GitDetailer        GitStater
+	RepoDirectory      string
+	Verbose, LocalRepo bool
+	BraveMode          bool //ignore any warning just try to do all the things
+	NoColor            bool
 }
 
 func CreateRootCmd(opts *Options) *cobra.Command {
-	var repoDirectory string
-	var verbose bool
-	var allowNoRemotes bool
-	var strictMode bool
 	cmd := &cobra.Command{
 		Use:       "bump",
 		Args:      cobra.OnlyValidArgs,
 		ValidArgs: []string{major, minor, patch},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			if verbose {
-				fmt.Printf("working directory: %s\n", repoDirectory)
+			if opts.Verbose {
+				fmt.Printf("%s working directory: %s\n", opts.P.Symbols.Bullet, opts.RepoDirectory)
 			}
 
-			err := internal.SetBumpWd(repoDirectory)
+			err := internal.SetBumpWd(opts.RepoDirectory)
 			if err != nil {
-				fmt.Println(opts.ErrPrinter(err.Error()))
+				fmt.Println(opts.P.Err(err.Error()))
 				os.Exit(1)
 			}
 
-			if strictMode {
-				gitStateChecks(opts, allowNoRemotes)
+			if !opts.BraveMode {
+				gitStateChecks(opts)
 			}
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			allowNoRemotes, _ := cmd.PersistentFlags().GetBool("no-remotes")
-
 			ver, err := opts.GitDetailer.GetCurrentVersion()
 			var tagErr internal.SemVerTagError
 			var nextVer *semver.Version
 			if err != nil {
 				if errors.As(err, &tagErr) {
 					if !tagErr.NoTags {
-						fmt.Println(opts.ErrPrinter("tag '%s' is not a valid semver tag", tagErr.Tag))
+						fmt.Println(opts.P.Err("tag '%s' is not a valid semver tag", tagErr.Tag))
 						os.Exit(1)
 					}
 
-					fmt.Println(opts.WarningPrinter("no tags found, using default version v%s\n", internal.DefaultVersion))
+					fmt.Println(opts.P.Warning("no tags found, using default version %s\n", opts.P.Version(internal.DefaultVersion)))
 					ver = semver.MustParse("0.0.0")
 				} else {
 					return err
@@ -86,82 +100,75 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 			nextVer = createNewVersion(getIncPart(args), ver)
 
 			if err != nil && tagErr.NoTags {
-				fmt.Printf("set version %s\n", opts.OkPrinter("v"+nextVer.String()))
+				fmt.Printf("set version %s\n", opts.P.Ok("v"+nextVer.String()))
 			} else {
-				fmt.Printf("bump version %s => %s\n", opts.InfoPrinter("v"+ver.String()), opts.OkPrinter("v"+nextVer.String()))
+				fmt.Printf("%s bump version %s => %s\n", opts.P.Symbols.Bullet, opts.P.Info("v"+ver.String()), opts.P.Ok("v"+nextVer.String()))
 			}
 
-			tag := fmt.Sprintf("v%s", nextVer.String())
+			tag := opts.P.Version(nextVer.String())
 			err = opts.GitDetailer.SetGitTag(tag)
 			if err != nil {
 				return err
 			}
 
-			if !allowNoRemotes {
+			if !opts.LocalRepo {
 				err = opts.GitDetailer.PushGitTag(tag)
 				if err != nil {
 					return err
 				}
 			}
 
+			fmt.Printf("%s %s\n", opts.P.Symbols.Ok, tag)
 			return nil
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&repoDirectory, "repo", "r", "", "path to the repository")
-	cmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose output")
-	cmd.PersistentFlags().BoolVarP(&allowNoRemotes, "no-remotes", "l", false, "if no-remotes is set, bump will not error if no remotes are found")
-	cmd.PersistentFlags().BoolVarP(&strictMode, "strict", "s", true, "if strict is set, bump will error if git state checks are not met (default: true)")
-
 	cmd.SetVersionTemplate("{{.Version}}\n")
 	cmd.Version = handleVersionCommand()
-
-	undoCmd := CreateUndoCmd(opts)
-	cmd.AddCommand(undoCmd)
 
 	return cmd
 }
 
-func gitStateChecks(opts *Options, allowNoRemotes bool) {
+func gitStateChecks(opts *Options) {
 	b, yes, err := opts.GitDetailer.IsDefaultBranch()
 	if err != nil {
-		fmt.Println(opts.ErrPrinter(err.Error()))
+		fmt.Println(opts.P.Err(err.Error()))
 		os.Exit(1)
 	} else if !yes {
-		fmt.Println(opts.ErrPrinter("not on default branch"))
+		fmt.Printf("%s not on default branch (%s)\n", opts.P.Symbols.Error, b)
 		os.Exit(1)
 	} else {
-		fmt.Println(opts.OkPrinter("on default branch: %s", b))
+		fmt.Printf("%s on default branch (%s)\n", opts.P.Symbols.Ok, b)
 	}
 
 	if yes, err := opts.GitDetailer.CheckLocalChanges(); err != nil {
-		fmt.Println(opts.ErrPrinter(err.Error()))
+		fmt.Println(opts.P.Err(err.Error()))
 		os.Exit(1)
 	} else if yes {
-		fmt.Println(opts.ErrPrinter("uncommitted changes"))
+		fmt.Printf("%s uncommitted changes\n", opts.P.Symbols.Error)
 		os.Exit(1)
 	} else {
-		fmt.Println(opts.OkPrinter("no uncommitted changes"))
+		fmt.Printf("%s no uncommitted changes\n", opts.P.Symbols.Ok)
 	}
 
-	if yes, err := opts.GitDetailer.CheckRemoteChanges(allowNoRemotes); err != nil {
-		fmt.Println(opts.ErrPrinter(err.Error()))
+	if yes, err := opts.GitDetailer.CheckRemoteChanges(opts.LocalRepo); err != nil {
+		fmt.Println(opts.P.Err(err.Error()))
 		os.Exit(1)
 	} else if yes {
-		fmt.Println(opts.ErrPrinter("remote changes, pull first"))
+		fmt.Printf("%s remote changes, pull first\n", opts.P.Symbols.Error)
 		os.Exit(1)
 	} else {
-		fmt.Println(opts.OkPrinter("no remote changes"))
+		fmt.Printf("%s no remote changes\n", opts.P.Symbols.Ok)
 	}
 
 	if yes, err := opts.GitDetailer.HasUnpushedChanges(b); err != nil {
-		fmt.Println(opts.ErrPrinter(err.Error()))
+		fmt.Println(opts.P.Err(err.Error()))
 		os.Exit(1)
 	} else if yes {
-		fmt.Println(opts.ErrPrinter("unpushed changes"))
+		fmt.Printf("%s unpushed changes\n", opts.P.Symbols.Error)
 		os.Exit(1)
 	} else {
-		fmt.Println(opts.OkPrinter("no unpushed changes"))
+		fmt.Printf("%s no unpushed changes\n", opts.P.Symbols.Ok)
 	}
 }
 
