@@ -45,7 +45,7 @@ func CreateUndoCmd(opts *Options) *cobra.Command {
 						fmt.Println(opts.P.Warning("local tag was removed, but remote tag may still exist"))
 						return err
 					}
-					fmt.Println(opts.P.Ok("remote tag removed"))
+					fmt.Printf("%s remote tag removed\n", opts.P.Symbols.Ok)
 				}
 			}
 
