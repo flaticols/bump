@@ -64,7 +64,10 @@ type Options struct {
 
 func CreateRootCmd(opts *Options) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:       "bump",
+		Use:       "bump [major|minor|patch]",
+		Short:     "A command-line tool to easily bump the git tag version of your project using semantic versioning",
+		Long:      `Bump is a lightweight command-line tool that helps you manage semantic versioning tags in Git repositories. It automates version increments following SemVer standards, making it easy to maintain proper versioning in your projects.`,
+		Example:   "  bump         # Bumps patch version (e.g., v1.2.3 -> v1.2.4)\n  bump major   # Bumps major version (e.g., v1.2.3 -> v2.0.0)\n  bump minor   # Bumps minor version (e.g., v1.2.3 -> v1.3.0)\n  bump patch   # Bumps patch version (e.g., v1.2.3 -> v1.2.4)",
 		Args:      cobra.OnlyValidArgs,
 		ValidArgs: []string{major, minor, patch},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {

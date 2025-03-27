@@ -15,6 +15,8 @@ func CreateUndoCmd(opts *Options) *cobra.Command {
 		Use:   "undo",
 		Short: "Remove the latest semver git tag",
 		Long:  "Remove the latest semver git tag both locally and from the remote repository",
+		Example: "  bump undo           # Removes the latest tag (" +
+			"prompts for confirmation)\n  bump undo --brave   # Removes the latest tag without confirmation",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ver, err := opts.GitDetailer.GetCurrentVersion()
 			var tagErr internal.SemVerTagError
