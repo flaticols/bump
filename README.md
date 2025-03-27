@@ -1,5 +1,5 @@
 # bump
-![189E66B5-315F-4A40-A289-8D1A4DF39098](https://github.com/user-attachments/assets/06c5c046-1119-4329-99d3-19fd56dd1666)
+![189E66B5-315F-4A40-A289-8D1A4DF39098 Small](https://github.com/user-attachments/assets/0dbf485f-9174-49ad-a6c3-6cfaff697c37)
 
 A command-line tool to easily bump the git tag version of your project using semantic versioning.
 
