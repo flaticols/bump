@@ -96,6 +96,69 @@ func (gs *GitState) CheckRemoteChanges(allowNoRemotes bool) (bool, error) {
 	return len(strings.TrimSpace(string(output))) > 0, nil
 }
 
+// HasRemoteUnfetchedTags checks if there are tags in the remote repository that haven't been fetched locally.
+// Returns true if unfetched tags exist, false otherwise, and an error if the process fails.
+func (gs *GitState) HasRemoteUnfetchedTags() (bool, error) {
+	// First check if remotes exist
+	remoteCmd := exec.Command("git", "remote")
+	remoteOutput, err := remoteCmd.Output()
+	if err != nil || len(strings.TrimSpace(string(remoteOutput))) == 0 {
+		return false, fmt.Errorf("no remotes found in repository")
+	}
+
+	// Get local tags before fetching
+	localTagsCmd := exec.Command("git", "tag")
+	localTagsOutput, err := localTagsCmd.Output()
+	if err != nil {
+		return false, fmt.Errorf("failed to get local tags: %w", err)
+	}
+	localTags := strings.Split(strings.TrimSpace(string(localTagsOutput)), "\n")
+	localTagSet := make(map[string]bool)
+	for _, tag := range localTags {
+		if tag != "" {
+			localTagSet[tag] = true
+		}
+	}
+
+	// Get remote tags without fetching them
+	lsRemoteCmd := exec.Command("git", "ls-remote", "--tags", "origin")
+	lsRemoteOutput, err := lsRemoteCmd.Output()
+	if err != nil {
+		return false, fmt.Errorf("failed to list remote tags: %w", err)
+	}
+
+	// Parse the output to extract remote tags
+	remoteTags := strings.Split(strings.TrimSpace(string(lsRemoteOutput)), "\n")
+	for _, line := range remoteTags {
+		if line == "" {
+			continue
+		}
+
+		// Extract tag name from line like "hash refs/tags/tagname"
+		parts := strings.Split(line, "\t")
+		if len(parts) < 2 {
+			continue
+		}
+
+		refPath := parts[1]
+		// Skip tag pointers (^{})
+		if strings.Contains(refPath, "^{}") {
+			continue
+		}
+
+		// Extract the tag name from refs/tags/tagname
+		tagName := strings.TrimPrefix(refPath, "refs/tags/")
+
+		// If this remote tag is not in our local tags, we have unfetched tags
+		if !localTagSet[tagName] {
+			return true, nil
+		}
+	}
+
+	// No unfetched tags found
+	return false, nil
+}
+
 // IsDefaultBranch checks if the current Git branch is one of the predefined default branches and returns a boolean and an error if one occurs.
 func (gs *GitState) IsDefaultBranch() (string, bool, error) {
 	// Try the normal approach first

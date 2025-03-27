@@ -35,8 +35,9 @@ func AvoidIf(enabled, defaultValue bool) AskConfirmationOpt {
 // AskConfirmation ask user to answer yes or not and return result
 func AskConfirmation(q string, opts ...AskConfirmationOpt) (confirm bool) {
 	o := askConfirmationOpts{
-		yesText: "Yes",
-		noText:  "No",
+		question: q,
+		yesText:  "Yes",
+		noText:   "No",
 	}
 
 	for _, opt := range opts {
@@ -47,11 +48,14 @@ func AskConfirmation(q string, opts ...AskConfirmationOpt) (confirm bool) {
 		return o.defaultValue
 	}
 
-	huh.NewConfirm().
+	err := huh.NewConfirm().
 		Title(o.question).
 		Affirmative(o.yesText). //fmt.Sprintf("Yes remove %s!", tag)
 		Negative(o.noText).
 		Value(&confirm).
 		WithTheme(huh.ThemeBase()).Run()
+	if err != nil {
+		return false
+	}
 	return confirm
 }

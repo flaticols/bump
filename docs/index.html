@@ -74,24 +74,33 @@
                     <div class="terminal-body">
                         <p><span class="terminal-prompt">$ </span>bump</p>
                         <p>
-                            <span class="cmd-success">✓</span> on default
+                            <span class="cmd-success">•</span> on default
                             branch: main
                         </p>
                         <p>
-                            <span class="cmd-success">✓</span> no uncommitted
+                            <span class="cmd-success">•</span> no uncommitted
                             changes
                         </p>
                         <p>
-                            <span class="cmd-success">✓</span> no remote changes
+                            <span class="cmd-success">•</span> no remote changes
                         </p>
                         <p>
-                            <span class="cmd-success">✓</span> no unpushed
+                            <span class="cmd-success">•</span> no unpushed
                             changes
                         </p>
                         <p>
-                            bump version
-                            <span class="version-old">1.2.3</span> =>
-                            <span class="version-new">1.2.4</span>
+                            <span class="cmd-success">•</span> no new remote tags
+                        </p>
+                        <p>
+                            <span class="cmd-bullet">•</span> bump tag
+                            <span class="version-old">v1.2.3</span> =>
+                            <span class="version-new">v1.2.4</span>
+                        </p>
+                        <p>
+                            <span class="cmd-success">•</span> tag v1.2.4 created
+                        </p>
+                        <p>
+                            <span class="cmd-success">•</span> tag v1.2.4 pushed
                         </p>
                     </div>
                 </div>
@@ -133,16 +142,17 @@ bump patch    # Bumps patch version (e.g., 1.2.3 -> 1.2.4)
 bump undo     # Removes the last version tag</code></pre>
 
                 <h3>Options</h3>
-                <pre><code>--repo, -r     Path to the repository (if not current directory)
---verbose, -v  Print verbose output
---no-remotes, -l  If set, bump will not error if no remotes are found
---strict, -s   If strict is set, bump will error if git state checks are not met (default: true)
---version      Print version information</code></pre>
+                <pre><code>--repo, -r       Path to the repository (if not current directory)
+--verbose, -v    Print verbose output
+--local, -l      If local is set, bump will not error if no remotes are found
+--brave, -b      If brave is set, bump will not ask any questions (default: false)
+--no-color       Disable colorful output (default: false)
+--version        Print version information</code></pre>
 
                 <h3>Commands</h3>
                 <p>Bump includes the following commands:</p>
-                <pre><code>bump           # Main command to increment version
-bump undo      # Removes the most recently created version tag</code></pre>
+                <pre><code>bump [major|minor|patch]   # Main command to increment version (defaults to patch)
+bump undo                  # Removes the most recently created version tag</code></pre>
             </section>
 
             <section id="features">
@@ -151,7 +161,7 @@ bump undo      # Removes the most recently created version tag</code></pre>
                 <div class="feature-grid">
                     <div class="feature">
                         <div class="feature-icon">
-                            <i class="fas fa-check-circle"></i>
+                            <i class="fas fa-tag"></i>
                             <h3 class="feature-title">Auto-Detection</h3>
                         </div>
                         <p>
@@ -203,6 +213,39 @@ bump undo      # Removes the most recently created version tag</code></pre>
                             needed.
                         </p>
                     </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-terminal"></i>
+                            <h3 class="feature-title">Colorful Output</h3>
+                        </div>
+                        <p>
+                            Provides visually appealing and clear terminal feedback
+                            with status indicators.
+                        </p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-sync-alt"></i>
+                            <h3 class="feature-title">Tag Sync</h3>
+                        </div>
+                        <p>
+                            Automatically detects and fetches new tags from remote
+                            before performing operations.
+                        </p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3 class="feature-title">Brave Mode</h3>
+                        </div>
+                        <p>
+                            Bypass warnings and continue operations with the brave flag
+                            for advanced users.
+                        </p>
+                    </div>
                 </div>
             </section>
 
@@ -215,7 +258,14 @@ bump undo      # Removes the most recently created version tag</code></pre>
                         Increment the patch version number:
                     </p>
                     <pre><code>$ bump
-bump version 1.2.3 => 1.2.4</code></pre>
+• on default branch: main
+• no uncommitted changes
+• no remote changes
+• no unpushed changes
+• no new remote tags
+• bump tag v1.2.3 => v1.2.4
+• tag v1.2.4 created
+• tag v1.2.4 pushed</code></pre>
                 </div>
 
                 <div class="example">
@@ -224,7 +274,14 @@ bump version 1.2.3 => 1.2.4</code></pre>
                         Increment the major version for breaking changes:
                     </p>
                     <pre><code>$ bump major
-bump version 1.2.3 => 2.0.0</code></pre>
+• on default branch: main
+• no uncommitted changes
+• no remote changes
+• no unpushed changes
+• no new remote tags
+• bump tag v1.2.3 => v2.0.0
+• tag v2.0.0 created
+• tag v2.0.0 pushed</code></pre>
                 </div>
 
                 <div class="example">
@@ -233,7 +290,14 @@ bump version 1.2.3 => 2.0.0</code></pre>
                         Increment the minor version for new features:
                     </p>
                     <pre><code>$ bump minor
-bump version 1.2.3 => 1.3.0</code></pre>
+• on default branch: main
+• no uncommitted changes
+• no remote changes
+• no unpushed changes
+• no new remote tags
+• bump tag v1.2.3 => v1.3.0
+• tag v1.3.0 created
+• tag v1.3.0 pushed</code></pre>
                 </div>
 
                 <div class="example">
@@ -242,7 +306,15 @@ bump version 1.2.3 => 1.3.0</code></pre>
                         Specify a different repository path:
                     </p>
                     <pre><code>$ bump --repo=/path/to/repo minor
-bump version 1.2.3 => 1.3.0</code></pre>
+• working directory: /path/to/repo
+• on default branch: main
+• no uncommitted changes
+• no remote changes
+• no unpushed changes
+• no new remote tags
+• bump tag v1.2.3 => v1.3.0
+• tag v1.3.0 created
+• tag v1.3.0 pushed</code></pre>
                 </div>
 
                 <div class="example">
@@ -251,7 +323,52 @@ bump version 1.2.3 => 1.3.0</code></pre>
                         Remove the most recently created version tag:
                     </p>
                     <pre><code>$ bump undo
-removed tag 'v1.2.4'</code></pre>
+Are you sure? [Y/n] Y
+• removing tag v1.2.4
+• local tag removed
+• remote tag removed</code></pre>
+                </div>
+                
+                <div class="example">
+                    <h3>Using Brave Mode</h3>
+                    <p class="example-description">
+                        Skip all confirmation prompts with brave mode:
+                    </p>
+                    <pre><code>$ bump undo --brave
+• brave mode enabled, ignoring warnings and errors
+• removing tag v1.2.4
+• local tag removed
+• remote tag removed</code></pre>
+                </div>
+                
+                <div class="example">
+                    <h3>Local Repository</h3>
+                    <p class="example-description">
+                        Work with a repository without remotes:
+                    </p>
+                    <pre><code>$ bump --local
+• on default branch: main
+• no uncommitted changes
+• no unpushed changes
+• bump tag v1.2.3 => v1.2.4
+• tag v1.2.4 created</code></pre>
+                </div>
+                
+                <div class="example">
+                    <h3>Fetching New Remote Tags</h3>
+                    <p class="example-description">
+                        Automatically fetch new tags from remote:
+                    </p>
+                    <pre><code>$ bump
+• on default branch: main
+• no uncommitted changes
+• no remote changes
+• no unpushed changes
+• remote has new tags, fetching tags first
+• tags fetched successfully
+• bump tag v1.2.3 => v1.2.4
+• tag v1.2.4 created
+• tag v1.2.4 pushed</code></pre>
                 </div>
             </section>
         </main>
@@ -262,7 +379,7 @@ removed tag 'v1.2.4'</code></pre>
                     Bump CLI &copy; 2025 by
                     <a href="https://github.com/flaticols">Denis Panfilov</a>
                     | MIT License
-                    <span class="version-badge">v0.0.4</span>
+                    <span class="version-badge">v0.0.5</span>
                 </p>
                 <div class="footer-links">
                     <a href="https://github.com/flaticols/bump">GitHub</a>

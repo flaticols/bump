@@ -21,8 +21,8 @@ func CreateUndoCmd(opts *Options) *cobra.Command {
 			if err != nil {
 				if errors.As(err, &tagErr) {
 					if tagErr.NoTags {
-						fmt.Println(opts.P.Err("no tags found to remove"))
-						os.Exit(1)
+						fmt.Printf("%s no tags found to remove\n", opts.P.Symbols.Error)
+						opts.Exit()
 					}
 					fmt.Println(opts.P.Err("tag '%s' is not a valid semver tag", tagErr.Tag))
 					os.Exit(1)
@@ -41,9 +41,9 @@ func CreateUndoCmd(opts *Options) *cobra.Command {
 				fmt.Printf("%s local tag removed\n", opts.P.Symbols.Ok)
 				if !opts.LocalRepo {
 					if err := opts.GitDetailer.RemoveRemoteGitTag(tag); err != nil {
-						fmt.Println(opts.P.Warning("failed to remove remote tag: %v", err))
-						fmt.Println(opts.P.Warning("local tag was removed, but remote tag may still exist"))
-						return err
+						fmt.Printf("%s remote tag not removed\n", opts.P.Symbols.Error)
+						fmt.Printf("%s error: %s\n", opts.P.Symbols.Error, err.Error())
+						os.Exit(1)
 					}
 					fmt.Printf("%s remote tag removed\n", opts.P.Symbols.Ok)
 				}
