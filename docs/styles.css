@@ -63,6 +63,13 @@ header {
     margin-bottom: 1rem;
 }
 
+.logo-image {
+    max-width: 200px;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
 h1 {
     font-size: 2.5rem;
     font-weight: 700;
