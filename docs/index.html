@@ -42,11 +42,11 @@
 
         <nav>
             <div class="container nav-container">
-                <a href="#about">About</a>
                 <a href="#install">Installation</a>
                 <a href="#usage">Usage</a>
                 <a href="#features">Features</a>
                 <a href="#examples">Examples</a>
+                <a href="#changelog">Changelog</a>
                 <a href="https://github.com/flaticols/bump">GitHub</a>
             </div>
         </nav>
@@ -370,6 +370,74 @@ Are you sure? [Y/n] Y
 • tag v1.2.4 created
 • tag v1.2.4 pushed</code></pre>
                 </div>
+            </section>
+
+            <section id="changelog" class="changelog">
+                <h2>Changelog</h2>
+                <p>
+                    Track the development progress of Bump. For a full changelog, visit
+                    <a href="https://github.com/flaticols/bump/blob/main/CHANGELOG.md">CHANGELOG.md</a>
+                    on GitHub.
+                </p>
+
+                <details open>
+                    <summary>v0.0.6 <span class="version-date">March 27, 2025</span></summary>
+                    <div class="changelog-content">
+                        <h4>Added</h4>
+                        <ul>
+                            <li><span class="changelog-badge badge-added">Added</span> Improved help documentation with examples and better descriptions</li>
+                            <li><span class="changelog-badge badge-added">Added</span> Version increment arguments (<code>major</code>, <code>minor</code>, <code>patch</code>) now visible in help text</li>
+                            <li><span class="changelog-badge badge-added">Added</span> Added CHANGELOG.md to track version history</li>
+                            <li><span class="changelog-badge badge-added">Added</span> Added Changelog section to documentation website</li>
+                        </ul>
+                        <h4>Changed</h4>
+                        <ul>
+                            <li><span class="changelog-badge badge-changed">Changed</span> Better command usage descriptions in help text</li>
+                            <li><span class="changelog-badge badge-changed">Changed</span> Example commands now more clearly show their purpose</li>
+                            <li><span class="changelog-badge badge-changed">Changed</span> Updated undo command documentation with usage examples</li>
+                        </ul>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>v0.0.5 <span class="version-date">March 20, 2025</span></summary>
+                    <div class="changelog-content">
+                        <h4>Added</h4>
+                        <ul>
+                            <li><span class="changelog-badge badge-added">Added</span> New <code>HasRemoteUnfetchedTags()</code> function to detect and fetch new tags from remote repositories</li>
+                            <li><span class="changelog-badge badge-added">Added</span> Automatic tag fetching from remote before performing operations</li>
+                            <li><span class="changelog-badge badge-added">Added</span> "Brave mode" flag (<code>--brave</code>, <code>-b</code>) to bypass warnings and continue operations</li>
+                            <li><span class="changelog-badge badge-added">Added</span> Improved error handling with consistent exit behavior</li>
+                        </ul>
+                        <h4>Changed</h4>
+                        <ul>
+                            <li><span class="changelog-badge badge-changed">Changed</span> Updated output format to use bullet points (•) instead of symbols (✓, ⚠, ✗)</li>
+                            <li><span class="changelog-badge badge-changed">Changed</span> Revised documentation with new output examples</li>
+                            <li><span class="changelog-badge badge-changed">Changed</span> Updated README and HTML documentation to reflect the new features and output format</li>
+                            <li><span class="changelog-badge badge-changed">Changed</span> Improved messaging for tag operations</li>
+                        </ul>
+                        <h4>Fixed</h4>
+                        <ul>
+                            <li><span class="changelog-badge badge-fixed">Fixed</span> Better handling of repositories without remotes</li>
+                            <li><span class="changelog-badge badge-fixed">Fixed</span> Consistent error messaging</li>
+                        </ul>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>v0.0.4 <span class="version-date">March 15, 2025</span></summary>
+                    <div class="changelog-content">
+                        <h4>Added</h4>
+                        <ul>
+                            <li><span class="changelog-badge badge-added">Added</span> Initial public release</li>
+                            <li><span class="changelog-badge badge-added">Added</span> Basic semantic versioning command-line functionality</li>
+                            <li><span class="changelog-badge badge-added">Added</span> Support for major, minor, and patch version bumping</li>
+                            <li><span class="changelog-badge badge-added">Added</span> Tag creation and pushing to remote repositories</li>
+                            <li><span class="changelog-badge badge-added">Added</span> Undo command for removing the latest tag</li>
+                            <li><span class="changelog-badge badge-added">Added</span> Validation for repository state before operations</li>
+                        </ul>
+                    </div>
+                </details>
             </section>
         </main>
 

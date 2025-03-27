@@ -9,6 +9,17 @@
     --header-bg: #2b2114;
     --header-color: #ffffff;
     --shadow: rgba(0, 0, 0, 0.08);
+    
+    /* Changelog colors */
+    --added-bg: #DCEDC8;
+    --added-color: #33691E;
+    --changed-bg: #BBDEFB;
+    --changed-color: #0D47A1;
+    --fixed-bg: #FFE0B2;
+    --fixed-color: #E65100;
+    --details-bg: #f9f9f9;
+    --details-bg-open: #f0f0f0;
+    --details-border: #e0e0e0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,6 +34,17 @@
         --header-bg: #0f0d0a;
         --header-color: #fdf7ed;
         --shadow: rgba(0, 0, 0, 0.3);
+        
+        /* Changelog colors - dark mode */
+        --added-bg: #1B5E20;
+        --added-color: #DCEDC8;
+        --changed-bg: #0D47A1;
+        --changed-color: #BBDEFB;
+        --fixed-bg: #E65100;
+        --fixed-color: #FFE0B2;
+        --details-bg: #2d241c;
+        --details-bg-open: #3a3128;
+        --details-border: #4a4036;
     }
 }
 
@@ -432,6 +454,77 @@ pre {
 
 .cmd-success {
     color: #27c93f;
+}
+
+/* Changelog Styles */
+.changelog details {
+    margin-bottom: 1rem;
+    border: 1px solid var(--details-border);
+    border-radius: 4px;
+    padding: 0.5rem;
+    background-color: var(--details-bg);
+    transition: all 0.3s ease;
+}
+
+.changelog summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0.5rem;
+    outline: none;
+}
+
+.changelog details[open] {
+    background-color: var(--details-bg-open);
+    box-shadow: 0 2px 5px var(--shadow);
+}
+
+.changelog-content {
+    padding: 0.5rem 1rem;
+}
+
+.changelog h3, .changelog h4 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.changelog ul {
+    margin-bottom: 1rem;
+}
+
+.changelog-content ul {
+    padding-left: 1.5rem;
+}
+
+.changelog-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
+    border-radius: 4px;
+    margin-right: 0.5rem;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.badge-added {
+    background-color: var(--added-bg);
+    color: var(--added-color);
+}
+
+.badge-changed {
+    background-color: var(--changed-bg);
+    color: var(--changed-color);
+}
+
+.badge-fixed {
+    background-color: var(--fixed-bg);
+    color: var(--fixed-color);
+}
+
+.version-date {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-left: 0.5rem;
 }
 
 @media (max-width: 768px) {

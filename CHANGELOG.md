@@ -5,7 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.0.5] - 2025-03-27
+## [Unreleased]
+
+## [0.0.6] - 2025-03-27
+
+### Added
+- Improved help documentation with examples and better descriptions
+- Version increment arguments (`major`, `minor`, `patch`) now visible in help text
+- Added CHANGELOG.md to track version history
+- Added Changelog section to documentation website
+
+### Changed
+- Better command usage descriptions in help text
+- Example commands now more clearly show their purpose
+- Updated undo command documentation with usage examples
+
+## [0.0.5] - 2025-03-20
 
 ### Added
 - New `HasRemoteUnfetchedTags()` function to detect and fetch new tags from remote repositories
@@ -33,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Undo command for removing the latest tag
 - Validation for repository state before operations
 
-[Unreleased]: https://github.com/flaticols/bump/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/flaticols/bump/compare/v0.0.6...HEAD
+[0.0.6]: https://github.com/flaticols/bump/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/flaticols/bump/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/flaticols/bump/releases/tag/v0.0.4
