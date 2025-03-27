@@ -1,200 +1,280 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#fdf7ed" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#1e1a15" media="(prefers-color-scheme: dark)">
-    <title>bump - Semantic Versioning for Git</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/IBM-Plex-Mono/4.0.2/font-face/complete/all.css">
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <header>
-        <div class="container header-content">
-            <div class="logo">
-                <img src="bump-small.png" alt="bump logo" class="logo-image">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            name="theme-color"
+            content="#2b2114"
+            media="(prefers-color-scheme: light)"
+        />
+        <meta
+            name="theme-color"
+            content="#0f0d0a"
+            media="(prefers-color-scheme: dark)"
+        />
+        <title>bump - Semantic Versioning for Git</title>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/IBM-Plex-Mono/4.0.2/font-face/complete/all.css"
+        />
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <header>
+            <div class="container header-content">
+                <div class="logo">
+                    <img
+                        src="bump-small.png"
+                        alt="bump logo"
+                        class="logo-image"
+                    />
+                </div>
+                <p class="tagline">
+                    Simple semantic versioning for Git repositories
+                </p>
             </div>
-            <p class="tagline">Simple semantic versioning for Git repositories</p>
-        </div>
-    </header>
+        </header>
 
-    <nav>
-        <div class="container nav-container">
-            <a href="#about">About</a>
-            <a href="#install">Installation</a>
-            <a href="#usage">Usage</a>
-            <a href="#features">Features</a>
-            <a href="#examples">Examples</a>
-            <a href="https://github.com/flaticols/bump">GitHub</a>
-        </div>
-    </nav>
+        <nav>
+            <div class="container nav-container">
+                <a href="#about">About</a>
+                <a href="#install">Installation</a>
+                <a href="#usage">Usage</a>
+                <a href="#features">Features</a>
+                <a href="#examples">Examples</a>
+                <a href="https://github.com/flaticols/bump">GitHub</a>
+            </div>
+        </nav>
 
-    <main class="container">
-        <section id="about">
-            <h2>About</h2>
-            <p>Bump is a lightweight command-line tool that helps you manage semantic versioning tags in Git repositories. It automates version increments following SemVer standards, making it easy to maintain proper versioning in your projects.</p>
-            
-            <div class="terminal">
-                <div class="terminal-header">
-                    <div class="terminal-dots">
-                        <div class="dot dot-red"></div>
-                        <div class="dot dot-yellow"></div>
-                        <div class="dot dot-green"></div>
+        <main class="container">
+            <section id="about">
+                <h2>About</h2>
+                <p>
+                    Bump is a lightweight command-line tool that helps you
+                    manage semantic versioning tags in Git repositories. It
+                    automates version increments following SemVer standards,
+                    making it easy to maintain proper versioning in your
+                    projects.
+                </p>
+
+                <div class="terminal">
+                    <div class="terminal-header">
+                        <div class="terminal-dots">
+                            <div class="dot dot-red"></div>
+                            <div class="dot dot-yellow"></div>
+                            <div class="dot dot-green"></div>
+                        </div>
+                        <div class="terminal-title">terminal</div>
                     </div>
-                    <div class="terminal-title">terminal</div>
+                    <div class="terminal-body">
+                        <p><span class="terminal-prompt">$ </span>bump</p>
+                        <p>
+                            <span class="cmd-success">✓</span> on default
+                            branch: main
+                        </p>
+                        <p>
+                            <span class="cmd-success">✓</span> no uncommitted
+                            changes
+                        </p>
+                        <p>
+                            <span class="cmd-success">✓</span> no remote changes
+                        </p>
+                        <p>
+                            <span class="cmd-success">✓</span> no unpushed
+                            changes
+                        </p>
+                        <p>
+                            bump version
+                            <span class="version-old">1.2.3</span> =>
+                            <span class="version-new">1.2.4</span>
+                        </p>
+                    </div>
                 </div>
-                <div class="terminal-body">
-                    <p><span class="terminal-prompt">$ </span>bump</p>
-                    <p><span class="cmd-success">✓</span> on default branch: main</p>
-                    <p><span class="cmd-success">✓</span> no uncommitted changes</p>
-                    <p><span class="cmd-success">✓</span> no remote changes</p>
-                    <p><span class="cmd-success">✓</span> no unpushed changes</p>
-                    <p>bump version <span style="color:#FFBD2E">1.2.3</span> => <span style="color:#27C93F">1.2.4</span></p>
-                </div>
-            </div>
-        </section>
+            </section>
 
-        <section id="install">
-            <h2>Installation</h2>
-            
-            <h3>Using Homebrew</h3>
-            <pre><code>brew tap flaticols/apps
+            <section id="install">
+                <h2>Installation</h2>
+
+                <h3>Using Homebrew</h3>
+                <pre><code>brew tap flaticols/apps
 brew install flaticols/apps/bump</code></pre>
 
-            <h3>Using Go</h3>
-            <pre><code>go install github.com/flaticols/bump@latest</code></pre>
+                <h3>Using Go</h3>
+                <pre><code>go install github.com/flaticols/bump@latest</code></pre>
 
-            <a href="https://github.com/flaticols/bump/releases" class="button">
-                <i class="fas fa-download"></i> Download Binary
-            </a>
-        </section>
+                <div class="button-container">
+                    <a
+                        href="https://github.com/flaticols/bump/releases"
+                        class="download-button"
+                    >
+                        <i class="fas fa-download"></i> Download Binary
+                    </a>
+                </div>
+            </section>
 
-        <section id="usage">
-            <h2>Usage</h2>
-        
-            <p>Bump follows semantic versioning principles, allowing you to easily increment the major, minor, or patch version of your project.</p>
-        
-            <pre><code>bump          # Bumps patch version (e.g., 1.2.3 -> 1.2.4)
+            <section id="usage">
+                <h2>Usage</h2>
+
+                <p>
+                    Bump follows semantic versioning principles, allowing you to
+                    easily increment the major, minor, or patch version of your
+                    project.
+                </p>
+
+                <pre><code>bump          # Bumps patch version (e.g., 1.2.3 -> 1.2.4)
 bump major    # Bumps major version (e.g., 1.2.3 -> 2.0.0)
 bump minor    # Bumps minor version (e.g., 1.2.3 -> 1.3.0)
 bump patch    # Bumps patch version (e.g., 1.2.3 -> 1.2.4)
 bump undo     # Removes the last version tag</code></pre>
-        
-            <h3>Options</h3>
-            <pre><code>--repo, -r     Path to the repository (if not current directory)
+
+                <h3>Options</h3>
+                <pre><code>--repo, -r     Path to the repository (if not current directory)
 --verbose, -v  Print verbose output
 --no-remotes, -l  If set, bump will not error if no remotes are found
 --strict, -s   If strict is set, bump will error if git state checks are not met (default: true)
 --version      Print version information</code></pre>
 
-            <h3>Commands</h3>
-            <p>Bump includes the following commands:</p>
-            <pre><code>bump           # Main command to increment version
+                <h3>Commands</h3>
+                <p>Bump includes the following commands:</p>
+                <pre><code>bump           # Main command to increment version
 bump undo      # Removes the most recently created version tag</code></pre>
-        </section>
+            </section>
 
-        <section id="features">
-            <h2>Features</h2>
-            
-            <div class="feature-grid">
-                <div class="feature">
-                    <div class="feature-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <h3 class="feature-title">Auto-Detection</h3>
-                    <p>Automatically detects and increments from the latest git tag.</p>
-                </div>
-                
-                <div class="feature">
-                    <div class="feature-icon">
-                        <i class="fas fa-code-branch"></i>
-                    </div>
-                    <h3 class="feature-title">Branch Validation</h3>
-                    <p>Validates that you're on a default branch (main, master, etc.).</p>
-                </div>
-                
-                <div class="feature">
-                    <div class="feature-icon">
-                        <i class="fas fa-history"></i>
-                    </div>
-                    <h3 class="feature-title">Change Detection</h3>
-                    <p>Checks for uncommitted local changes and remote synchronization.</p>
-                </div>
-                
-                <div class="feature">
-                    <div class="feature-icon">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                    </div>
-                    <h3 class="feature-title">Automatic Pushing</h3>
-                    <p>Creates and pushes git tags using semantic versioning.</p>
-                </div>
+            <section id="features">
+                <h2>Features</h2>
 
-                <div class="feature">
-                    <div class="feature-icon">
-                        <i class="fas fa-undo"></i>
+                <div class="feature-grid">
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-check-circle"></i>
+                            <h3 class="feature-title">Auto-Detection</h3>
+                        </div>
+                        <p>
+                            Automatically detects and increments from the latest
+                            git tag.
+                        </p>
                     </div>
-                    <h3 class="feature-title">Version Rollback</h3>
-                    <p>Easily remove the most recent version tag when needed.</p>
+
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-code-branch"></i>
+                            <h3 class="feature-title">Branch Validation</h3>
+                        </div>
+                        <p>
+                            Validates that you're on a default branch (main,
+                            master, etc.).
+                        </p>
+                    </div>
+
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-history"></i>
+                            <h3 class="feature-title">Change Detection</h3>
+                        </div>
+                        <p>
+                            Checks for uncommitted local changes and remote
+                            synchronization.
+                        </p>
+                    </div>
+
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h3 class="feature-title">Automatic Pushing</h3>
+                        </div>
+                        <p>
+                            Creates and pushes git tags using semantic
+                            versioning.
+                        </p>
+                    </div>
+
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-undo"></i>
+                            <h3 class="feature-title">Version Rollback</h3>
+                        </div>
+                        <p>
+                            Easily remove the most recent version tag when
+                            needed.
+                        </p>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <section id="examples">
-            <h2>Examples</h2>
+            <section id="examples">
+                <h2>Examples</h2>
 
-            <div class="example">
-                <h3>Standard Version Bumping</h3>
-                <p class="example-description">Increment the patch version number:</p>
-                <pre><code>$ bump
+                <div class="example">
+                    <h3>Standard Version Bumping</h3>
+                    <p class="example-description">
+                        Increment the patch version number:
+                    </p>
+                    <pre><code>$ bump
 bump version 1.2.3 => 1.2.4</code></pre>
-            </div>
+                </div>
 
-            <div class="example">
-                <h3>Major Version for Breaking Changes</h3>
-                <p class="example-description">Increment the major version for breaking changes:</p>
-                <pre><code>$ bump major
+                <div class="example">
+                    <h3>Major Version for Breaking Changes</h3>
+                    <p class="example-description">
+                        Increment the major version for breaking changes:
+                    </p>
+                    <pre><code>$ bump major
 bump version 1.2.3 => 2.0.0</code></pre>
-            </div>
+                </div>
 
-            <div class="example">
-                <h3>Minor Version for New Features</h3>
-                <p class="example-description">Increment the minor version for new features:</p>
-                <pre><code>$ bump minor
+                <div class="example">
+                    <h3>Minor Version for New Features</h3>
+                    <p class="example-description">
+                        Increment the minor version for new features:
+                    </p>
+                    <pre><code>$ bump minor
 bump version 1.2.3 => 1.3.0</code></pre>
-            </div>
+                </div>
 
-            <div class="example">
-                <h3>Using a Different Repository</h3>
-                <p class="example-description">Specify a different repository path:</p>
-                <pre><code>$ bump --repo=/path/to/repo minor
+                <div class="example">
+                    <h3>Using a Different Repository</h3>
+                    <p class="example-description">
+                        Specify a different repository path:
+                    </p>
+                    <pre><code>$ bump --repo=/path/to/repo minor
 bump version 1.2.3 => 1.3.0</code></pre>
-            </div>
+                </div>
 
-            <div class="example">
-                <h3>Undoing Last Version</h3>
-                <p class="example-description">Remove the most recently created version tag:</p>
-                <pre><code>$ bump undo
+                <div class="example">
+                    <h3>Undoing Last Version</h3>
+                    <p class="example-description">
+                        Remove the most recently created version tag:
+                    </p>
+                    <pre><code>$ bump undo
 removed tag 'v1.2.4'</code></pre>
-            </div>
-        </section>
-    </main>
+                </div>
+            </section>
+        </main>
 
-    <footer>
-        <div class="container">
-            <p>
-                Bump CLI &copy; 2025 by
-                <a href="https://github.com/flaticols">Denis Panfilov</a>
-                | MIT License
-                <span class="version-badge">v0.0.4</span>
-            </p>
-            <div class="footer-links">
-                <a href="https://github.com/flaticols/bump">GitHub</a>
-                <a href="https://github.com/flaticols/bump/blob/main/README.md">Documentation</a>
-                <a href="https://github.com/flaticols/bump/issues">Issues</a>
+        <footer>
+            <div class="container">
+                <p>
+                    Bump CLI &copy; 2025 by
+                    <a href="https://github.com/flaticols">Denis Panfilov</a>
+                    | MIT License
+                    <span class="version-badge">v0.0.4</span>
+                </p>
+                <div class="footer-links">
+                    <a href="https://github.com/flaticols/bump">GitHub</a>
+                    <a
+                        href="https://github.com/flaticols/bump/blob/main/README.md"
+                        >Documentation</a
+                    >
+                    <a href="https://github.com/flaticols/bump/issues"
+                        >Issues</a
+                    >
+                </div>
             </div>
-        </div>
-    </footer>
-</body>
+        </footer>
+    </body>
 </html>
