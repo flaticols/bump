@@ -9,11 +9,6 @@ import (
 	"github.com/flaticols/bump/internal"
 )
 
-var (
-	version   = "dev"
-	buildTime = "unknown"
-)
-
 func main() {
 	// Create color printers for formatted output
 	opts := &cmd.Options{
@@ -23,6 +18,8 @@ func main() {
 			Warning: color.New(color.FgYellow).SprintfFunc(),
 			Ok:      color.New(color.FgGreen).SprintfFunc(),
 			Version: versionPrinter,
+			Printf:  printfStderr,
+			Println: printlnStderr,
 			Symbols: cmd.Symbols{
 				Ok:      color.New(color.FgGreen).Sprintf("•"),
 				Warning: color.New(color.FgYellow).Sprintf("•"),
@@ -55,11 +52,24 @@ func main() {
 
 	color.NoColor = opts.NoColor
 
+	rootCmd.ErrOrStderr()
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
 
+func printfStderr(format string, a ...any) {
+	_, err := fmt.Fprintf(os.Stderr, format, a...)
+	if err != nil {
+		panic(err)
+	}
+}
+func printlnStderr(format string, a ...any) {
+	_, err := fmt.Fprintln(os.Stderr, fmt.Sprintf(format, a...))
+	if err != nil {
+		panic(err)
+	}
+}
 func versionPrinter(ver string) string {
 	return fmt.Sprintf("v%s", ver)
 }
