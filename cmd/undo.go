@@ -23,10 +23,10 @@ func CreateUndoCmd(opts *Options) *cobra.Command {
 			if err != nil {
 				if errors.As(err, &tagErr) {
 					if tagErr.NoTags {
-						fmt.Printf("%s no tags found to remove\n", opts.P.Symbols.Error)
+						opts.P.Printf("%s no tags found to remove\n", opts.P.Symbols.Error)
 						opts.Exit()
 					}
-					fmt.Println(opts.P.Err("tag '%s' is not a valid semver tag", tagErr.Tag))
+					opts.P.Println(opts.P.Err("tag '%s' is not a valid semver tag", tagErr.Tag))
 					os.Exit(1)
 				}
 				return err
@@ -36,18 +36,18 @@ func CreateUndoCmd(opts *Options) *cobra.Command {
 			confirm := tui.AskConfirmation("Are you sure?", tui.Yes(fmt.Sprintf("Yes remove %s!", tag)), tui.AvoidIf(opts.BraveMode, true))
 
 			if confirm {
-				fmt.Printf("%s removing tag %s\n", opts.P.Symbols.Bullet, opts.P.Info(tag))
+				opts.P.Printf("%s removing tag %s\n", opts.P.Symbols.Bullet, opts.P.Info(tag))
 				if err := opts.GitDetailer.RemoveLocalGitTag(tag); err != nil {
 					return err
 				}
-				fmt.Printf("%s local tag removed\n", opts.P.Symbols.Ok)
+				opts.P.Printf("%s local tag removed\n", opts.P.Symbols.Ok)
 				if !opts.LocalRepo {
 					if err := opts.GitDetailer.RemoveRemoteGitTag(tag); err != nil {
-						fmt.Printf("%s remote tag not removed\n", opts.P.Symbols.Error)
-						fmt.Printf("%s error: %s\n", opts.P.Symbols.Error, err.Error())
+						opts.P.Printf("%s remote tag not removed\n", opts.P.Symbols.Error)
+						opts.P.Printf("%s error: %s\n", opts.P.Symbols.Error, err.Error())
 						os.Exit(1)
 					}
-					fmt.Printf("%s remote tag removed\n", opts.P.Symbols.Ok)
+					opts.P.Printf("%s remote tag removed\n", opts.P.Symbols.Ok)
 				}
 			}
 
