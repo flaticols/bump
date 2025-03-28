@@ -9,17 +9,17 @@
     --header-bg: #2b2114;
     --header-color: #ffffff;
     --shadow: rgba(0, 0, 0, 0.08);
-    
+
     /* Changelog colors */
-    --added-bg: #DCEDC8;
-    --added-color: #33691E;
-    --changed-bg: #BBDEFB;
-    --changed-color: #0D47A1;
-    --fixed-bg: #FFE0B2;
-    --fixed-color: #E65100;
-    --details-bg: #f9f9f9;
-    --details-bg-open: #f0f0f0;
-    --details-border: #e0e0e0;
+    --added-bg: #dcedc8;
+    --added-color: #33691e;
+    --changed-bg: #bbdefb;
+    --changed-color: #0d47a1;
+    --fixed-bg: #ffe0b2;
+    --fixed-color: #e65100;
+    --details-bg: #f8f2e7;
+    --details-bg-open: #f2e5cf;
+    --details-border: #e6d6c2;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -34,14 +34,14 @@
         --header-bg: #0f0d0a;
         --header-color: #fdf7ed;
         --shadow: rgba(0, 0, 0, 0.3);
-        
+
         /* Changelog colors - dark mode */
-        --added-bg: #1B5E20;
-        --added-color: #DCEDC8;
-        --changed-bg: #0D47A1;
-        --changed-color: #BBDEFB;
-        --fixed-bg: #E65100;
-        --fixed-color: #FFE0B2;
+        --added-bg: #1b5e20;
+        --added-color: #dcedc8;
+        --changed-bg: #0d47a1;
+        --changed-color: #bbdefb;
+        --fixed-bg: #e65100;
+        --fixed-color: #ffe0b2;
         --details-bg: #2d241c;
         --details-bg-open: #3a3128;
         --details-border: #4a4036;
@@ -482,7 +482,8 @@ pre {
     padding: 0.5rem 1rem;
 }
 
-.changelog h3, .changelog h4 {
+.changelog h3,
+.changelog h4 {
     margin-top: 1rem;
     margin-bottom: 0.5rem;
     color: var(--text-color);
@@ -528,6 +529,12 @@ pre {
 }
 
 @media (max-width: 768px) {
+    .nav-container {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 0.5rem 0;
+    }
+
     h1 {
         font-size: 2rem;
     }
@@ -537,17 +544,40 @@ pre {
     }
 
     nav a {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.8rem;
+        margin: 0.25rem;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
     }
 }
 
 @media (max-width: 480px) {
+    .nav-container {
+        flex-wrap: wrap;
+    }
+
     header {
         padding: 40px 0 30px;
     }
 
     .feature-grid {
         grid-template-columns: 1fr;
+    }
+
+    nav a {
+        flex: 0 0 calc(33.333% - 0.5rem);
+        text-align: center;
+        margin: 0.25rem;
+        padding: 0.4rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    /* Add padding for iOS Safari status bar when in standalone mode */
+    body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    header {
+        padding-top: calc(30px + env(safe-area-inset-top));
     }
 }
