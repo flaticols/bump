@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"errors"
+	"github.com/flaticols/bump/semver"
 	"os"
 	"os/exec"
 	"runtime/debug"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/flaticols/bump/internal"
 	"github.com/spf13/cobra"
 )
@@ -30,7 +30,7 @@ type GitStater interface {
 	CheckRemoteChanges(allowNoRemotes bool) (bool, error)
 	HasUnpushedChanges(currentBranch string) (bool, error)
 	HasRemoteUnfetchedTags() (bool, error)
-	GetCurrentVersion() (*semver.Version, error)
+	GetCurrentVersion() (semver.Version, error)
 	SetGitTag(string) error
 	PushGitTag(string) error
 	RemoveLocalGitTag(string) error
