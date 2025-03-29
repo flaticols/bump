@@ -2,13 +2,12 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"runtime/debug"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/flaticols/bump/internal"
+	"github.com/flaticols/bump/semver"
 	"github.com/spf13/cobra"
 )
 
@@ -20,8 +19,12 @@ const (
 	patch semVerPart = "patch"
 )
 
-type ColorTextPrinter func(format string, a ...any) string
-type VersionPrinter func(string) string
+type (
+	ColorTextPrinter func(format string, a ...any) string
+	VersionPrinter   func(string) string
+	Printf           func(format string, a ...any)
+	Println          func(format string, a ...any)
+)
 
 type GitStater interface {
 	IsDefaultBranch() (string, bool, error)
@@ -29,7 +32,7 @@ type GitStater interface {
 	CheckRemoteChanges(allowNoRemotes bool) (bool, error)
 	HasUnpushedChanges(currentBranch string) (bool, error)
 	HasRemoteUnfetchedTags() (bool, error)
-	GetCurrentVersion() (*semver.Version, error)
+	GetCurrentVersion() (semver.Version, error)
 	SetGitTag(string) error
 	PushGitTag(string) error
 	RemoveLocalGitTag(string) error
@@ -48,6 +51,8 @@ type TextPrinters struct {
 	Info    ColorTextPrinter
 	Warning ColorTextPrinter
 	Ok      ColorTextPrinter
+	Printf  Printf
+	Println Println
 	Version VersionPrinter
 	Symbols Symbols
 }
@@ -57,7 +62,7 @@ type Options struct {
 	GitDetailer        GitStater
 	RepoDirectory      string
 	Verbose, LocalRepo bool
-	BraveMode          bool //ignore any warning just try to do all the things
+	BraveMode          bool
 	NoColor            bool
 	Exit               func()
 }
@@ -72,16 +77,16 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 		ValidArgs: []string{major, minor, patch},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			if opts.BraveMode {
-				fmt.Printf("%s brave mode enabled, ignoring warnings and errors\n", opts.P.Symbols.Warning)
+				opts.P.Printf("%s brave mode enabled, ignoring warnings and errors\n", opts.P.Symbols.Warning)
 			}
 
 			if opts.Verbose {
-				fmt.Printf("%s working directory: %s\n", opts.P.Symbols.Bullet, opts.RepoDirectory)
+				opts.P.Printf("%s working directory: %s\n", opts.P.Symbols.Bullet, opts.RepoDirectory)
 			}
 
 			err := internal.SetBumpWd(opts.RepoDirectory)
 			if err != nil {
-				fmt.Println(opts.P.Err(err.Error()))
+				opts.P.Println(opts.P.Err(err.Error()))
 				os.Exit(1)
 			}
 
@@ -90,16 +95,17 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ver, err := opts.GitDetailer.GetCurrentVersion()
 			var tagErr internal.SemVerTagError
-			var nextVer *semver.Version
+			var nextVer semver.Version
 			if err != nil {
 				if errors.As(err, &tagErr) {
 					if !tagErr.NoTags {
-						fmt.Println(opts.P.Err("tag '%s' is not a valid semver tag", tagErr.Tag))
+						opts.P.Println(opts.P.Err("tag '%s' is not a valid semver tag", tagErr.Tag))
 						os.Exit(1)
 					}
 
-					fmt.Printf("%s no tags found, using default version %s\n", opts.P.Symbols.Bullet, opts.P.Version(internal.DefaultVersion))
-					ver = semver.MustParse("0.0.0")
+					opts.P.Printf("%s no tags found, using default version %s\n", opts.P.Symbols.Bullet,
+						opts.P.Version(internal.DefaultVersion))
+					ver, _ = semver.Parse("0.0.0")
 				} else {
 					return err
 				}
@@ -109,23 +115,23 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 			tag := opts.P.Version(nextVer.String())
 
 			if err != nil && tagErr.NoTags {
-				fmt.Printf("%s set tag %s\n", opts.P.Symbols.Ok, tag)
+				opts.P.Printf("%s set tag %s\n", opts.P.Symbols.Ok, tag)
 			} else {
-				fmt.Printf("%s bump tag %s => %s\n", opts.P.Symbols.Bullet, opts.P.Version(ver.String()), tag)
+				opts.P.Printf("%s bump tag %s => %s\n", opts.P.Symbols.Bullet, opts.P.Version(ver.String()), tag)
 			}
 
 			err = opts.GitDetailer.SetGitTag(tag)
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%s tag %s created\n", opts.P.Symbols.Ok, tag)
+			opts.P.Printf("%s tag %s created\n", opts.P.Symbols.Ok, tag)
 
 			if !opts.LocalRepo {
 				err = opts.GitDetailer.PushGitTag(tag)
 				if err != nil {
 					return err
 				}
-				fmt.Printf("%s tag %s pushed\n", opts.P.Symbols.Ok, tag)
+				opts.P.Printf("%s tag %s pushed\n", opts.P.Symbols.Ok, tag)
 			}
 
 			return nil
@@ -147,59 +153,59 @@ func gitStateChecks(opts *Options) {
 
 	b, yes, err := opts.GitDetailer.IsDefaultBranch()
 	if err != nil {
-		fmt.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
+		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
 		exitIfNotBrave()
 	} else if !yes {
-		fmt.Printf("%s not on default branch (%s)\n", opts.P.Symbols.Error, b)
+		opts.P.Printf("%s not on default branch (%s)\n", opts.P.Symbols.Error, b)
 		exitIfNotBrave()
 	} else {
-		fmt.Printf("%s on default branch (%s)\n", opts.P.Symbols.Ok, b)
+		opts.P.Printf("%s on default branch (%s)\n", opts.P.Symbols.Ok, b)
 	}
 
 	if yes, err := opts.GitDetailer.CheckLocalChanges(); err != nil {
-		fmt.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
+		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
 		exitIfNotBrave()
 	} else if yes {
-		fmt.Printf("%s uncommitted changes\n", opts.P.Symbols.Error)
+		opts.P.Printf("%s uncommitted changes\n", opts.P.Symbols.Error)
 		exitIfNotBrave()
 	} else {
-		fmt.Printf("%s no uncommitted changes\n", opts.P.Symbols.Ok)
+		opts.P.Printf("%s no uncommitted changes\n", opts.P.Symbols.Ok)
 	}
 
 	if yes, err := opts.GitDetailer.CheckRemoteChanges(opts.LocalRepo); err != nil {
-		fmt.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
+		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
 		exitIfNotBrave()
 	} else if yes {
-		fmt.Printf("%s remote changes, pull first\n", opts.P.Symbols.Error)
+		opts.P.Printf("%s remote changes, pull first\n", opts.P.Symbols.Error)
 		exitIfNotBrave()
 	} else {
-		fmt.Printf("%s no remote changes\n", opts.P.Symbols.Ok)
+		opts.P.Printf("%s no remote changes\n", opts.P.Symbols.Ok)
 	}
 
 	if yes, err := opts.GitDetailer.HasUnpushedChanges(b); err != nil {
-		fmt.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
+		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
 		exitIfNotBrave()
 	} else if yes {
-		fmt.Printf("%s unpushed changes\n", opts.P.Symbols.Error)
+		opts.P.Printf("%s unpushed changes\n", opts.P.Symbols.Error)
 		exitIfNotBrave()
 	} else {
-		fmt.Printf("%s no unpushed changes\n", opts.P.Symbols.Ok)
+		opts.P.Printf("%s no unpushed changes\n", opts.P.Symbols.Ok)
 	}
 
 	// Check for unfetched remote tags
 	if !opts.LocalRepo {
 		if yes, err := opts.GitDetailer.HasRemoteUnfetchedTags(); err != nil {
-			fmt.Printf("%s %s\n", opts.P.Symbols.Warning, err.Error())
+			opts.P.Printf("%s %s\n", opts.P.Symbols.Warning, err.Error())
 		} else if yes {
-			fmt.Printf("%s remote has new tags, fetching tags first\n", opts.P.Symbols.Warning)
+			opts.P.Printf("%s remote has new tags, fetching tags first\n", opts.P.Symbols.Warning)
 			fetchCmd := exec.Command("git", "fetch", "--tags")
 			if err := fetchCmd.Run(); err != nil {
-				fmt.Printf("%s failed to fetch tags: %s\n", opts.P.Symbols.Error, err.Error())
+				opts.P.Printf("%s failed to fetch tags: %s\n", opts.P.Symbols.Error, err.Error())
 				exitIfNotBrave()
 			}
-			fmt.Printf("%s tags fetched successfully\n", opts.P.Symbols.Ok)
+			opts.P.Printf("%s tags fetched successfully\n", opts.P.Symbols.Ok)
 		} else {
-			fmt.Printf("%s no new remote tags\n", opts.P.Symbols.Ok)
+			opts.P.Printf("%s no new remote tags\n", opts.P.Symbols.Ok)
 		}
 	}
 }
@@ -217,18 +223,15 @@ func getIncPart(args []string) semVerPart {
 	return patch
 }
 
-func createNewVersion(incPart semVerPart, ver *semver.Version) *semver.Version {
+func createNewVersion(incPart semVerPart, ver semver.Version) semver.Version {
 	switch incPart {
 	case major:
-		v := ver.IncMajor()
-		return &v
+		return ver.IncrementMajor()
 	case minor:
-		v := ver.IncMinor()
-		return &v
+		return ver.IncrementMinor()
 	case patch:
 		fallthrough
 	default:
-		v := ver.IncPatch()
-		return &v
+		return ver.IncrementPatch()
 	}
 }
