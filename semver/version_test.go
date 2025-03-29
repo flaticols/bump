@@ -1,20 +1,21 @@
 package semver
 
 import (
-	"errors"
 	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
+type parseTestsInput struct {
+	input       string
+	wantErr     bool
+	expectedErr error
+	expected    Version
+}
+
 func TestParse(t *testing.T) {
-	tests := []struct {
-		input       string
-		wantErr     bool
-		expectedErr error
-		expected    Version
-	}{
+	tests := []parseTestsInput{
 		{"1.2.3", false, nil, Version{1, 2, 3, nil, nil}},
 		{"1.2.3-beta", false, nil, Version{1, 2, 3, []string{"beta"}, nil}},
 		{"1.2.3+build", false, nil, Version{1, 2, 3, nil, []string{"build"}}},
@@ -38,33 +39,13 @@ func TestParse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
 			got, err := Parse(tt.input)
-			if tt.wantErr {
-				require.Error(t, err)
-				if tt.expectedErr != nil {
-					require.True(t, errors.Is(err, tt.expectedErr))
-				}
-				return
-			}
-
-			require.NoError(t, err)
-			require.Equal(t, tt.expected.Major, got.Major, "Major version mismatch")
-			require.Equal(t, tt.expected.Minor, got.Minor, "Minor version mismatch")
-			require.Equal(t, tt.expected.Patch, got.Patch, "Patch version mismatch")
-			require.True(t, slices.Equal(got.Prerelease, tt.expected.Prerelease),
-				"Prerelease mismatch, got %v, want %v", got.Prerelease, tt.expected.Prerelease)
-			require.True(t, slices.Equal(got.Metadata, tt.expected.Metadata),
-				"Metadata mismatch, got %v, want %v", got.Metadata, tt.expected.Metadata)
+			parseTestChecks(t, tt, err, got)
 		})
 	}
 }
 
 func TestParseWithVPrefix(t *testing.T) {
-	tests := []struct {
-		input       string
-		wantErr     bool
-		expectedErr error
-		expected    Version
-	}{
+	tests := []parseTestsInput{
 		{"v1.2.3", false, nil, Version{1, 2, 3, nil, nil}},
 		{"v1.2.3-beta", false, nil, Version{1, 2, 3, []string{"beta"}, nil}},
 		{"v1.2.3+build", false, nil, Version{1, 2, 3, nil, []string{"build"}}},
@@ -89,22 +70,7 @@ func TestParseWithVPrefix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
 			got, err := ParseWithVPrefix(tt.input)
-			if tt.wantErr {
-				require.Error(t, err)
-				if tt.expectedErr != nil {
-					require.True(t, errors.Is(err, tt.expectedErr))
-				}
-				return
-			}
-
-			require.NoError(t, err)
-			require.Equal(t, tt.expected.Major, got.Major, "Major version mismatch")
-			require.Equal(t, tt.expected.Minor, got.Minor, "Minor version mismatch")
-			require.Equal(t, tt.expected.Patch, got.Patch, "Patch version mismatch")
-			require.True(t, slices.Equal(got.Prerelease, tt.expected.Prerelease),
-				"Prerelease mismatch, got %v, want %v", got.Prerelease, tt.expected.Prerelease)
-			require.True(t, slices.Equal(got.Metadata, tt.expected.Metadata),
-				"Metadata mismatch, got %v, want %v", got.Metadata, tt.expected.Metadata)
+			parseTestChecks(t, tt, err, got)
 		})
 	}
 }
@@ -263,7 +229,7 @@ func TestSetFunctions(t *testing.T) {
 	}
 	v4 := SetPrereleaseMap(v, prereleaseMap)
 	// Since map iteration order is non-deterministic, check length and contents differently
-	require.Equal(t, 4, len(v4.Prerelease), "SetPrereleaseMap() resulted in prerelease of wrong length")
+	require.Len(t, v4.Prerelease, 4, "SetPrereleaseMap() resulted in prerelease of wrong length")
 	gotMap := v4.GetPrereleaseMap()
 	for k, val := range prereleaseMap {
 		require.Equal(t, val, gotMap[k], "SetPrereleaseMap() map doesn't contain %s: %s", k, val)
@@ -275,7 +241,7 @@ func TestSetFunctions(t *testing.T) {
 		"timestamp": "1617293965",
 	}
 	v5 := SetMetadataMap(v, metadataMap)
-	require.Equal(t, 4, len(v5.Metadata), "SetMetadataMap() resulted in metadata of wrong length")
+	require.Len(t, v5.Metadata, 4, "SetMetadataMap() resulted in metadata of wrong length")
 	gotMetaMap := v5.GetMetadataMap()
 	for k, val := range metadataMap {
 		require.Equal(t, val, gotMetaMap[k], "SetMetadataMap() map doesn't contain %s: %s", k, val)
@@ -399,4 +365,23 @@ func TestIsValidWithVPrefix(t *testing.T) {
 			require.False(t, IsValidWithVPrefix(v), "IsValidWithVPrefix(%q) should be false", v)
 		})
 	}
+}
+
+func parseTestChecks(t *testing.T, tt parseTestsInput, err error, got Version) {
+	if tt.wantErr {
+		require.Error(t, err)
+		if tt.expectedErr != nil {
+			require.ErrorIsf(t, err, tt.expectedErr, "Expected error %s, got %s", tt.expectedErr, err)
+		}
+		return
+	}
+
+	require.NoError(t, err)
+	require.Equal(t, tt.expected.Major, got.Major, "Major version mismatch")
+	require.Equal(t, tt.expected.Minor, got.Minor, "Minor version mismatch")
+	require.Equal(t, tt.expected.Patch, got.Patch, "Patch version mismatch")
+	require.True(t, slices.Equal(got.Prerelease, tt.expected.Prerelease),
+		"Prerelease mismatch, got %v, want %v", got.Prerelease, tt.expected.Prerelease)
+	require.True(t, slices.Equal(got.Metadata, tt.expected.Metadata),
+		"Metadata mismatch, got %v, want %v", got.Metadata, tt.expected.Metadata)
 }

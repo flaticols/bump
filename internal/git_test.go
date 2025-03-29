@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // CommandRunner is an interface that allows us to mock exec.Command
@@ -92,7 +92,6 @@ func (gs *TestableGitState) CheckLocalChanges() (bool, error) {
 // IsDefaultBranch checks if current branch is a default branch
 func (gs *TestableGitState) IsDefaultBranch() (string, bool, error) {
 	output, err := gs.runGitCommand("rev-parse", "--abbrev-ref", "HEAD")
-
 	if err != nil {
 		// Fallback
 		output, err = gs.runGitCommand("symbolic-ref", "HEAD")
@@ -147,10 +146,10 @@ func TestCheckLocalChanges(t *testing.T) {
 			hasChanges, err := gs.CheckLocalChanges()
 
 			if tc.expectError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tc.expectedResult, hasChanges)
+				require.NoError(t, err)
+				require.Equal(t, tc.expectedResult, hasChanges)
 			}
 		})
 	}
@@ -202,11 +201,11 @@ func TestIsDefaultBranch(t *testing.T) {
 			branch, isDefault, err := gs.IsDefaultBranch()
 
 			if tc.expectError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tc.expectedBranch, branch)
-				assert.Equal(t, tc.expectedResult, isDefault)
+				require.NoError(t, err)
+				require.Equal(t, tc.expectedBranch, branch)
+				require.Equal(t, tc.expectedResult, isDefault)
 			}
 		})
 	}

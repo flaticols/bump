@@ -50,7 +50,7 @@ func AskConfirmation(q string, opts ...AskConfirmationOpt) (confirm bool) {
 
 	err := huh.NewConfirm().
 		Title(o.question).
-		Affirmative(o.yesText). //fmt.Sprintf("Yes remove %s!", tag)
+		Affirmative(o.yesText).
 		Negative(o.noText).
 		Value(&confirm).
 		WithTheme(huh.ThemeBase()).Run()

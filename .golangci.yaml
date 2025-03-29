@@ -1,0 +1,26 @@
+version: "2"
+
+linters:
+    default: none
+
+    enable:
+        - asciicheck
+        - decorder
+        - dupl
+        - errname
+        - testifylint
+
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
+
+  settings:
+    golines:
+      max-len: 145
+      shorten-comments: true
+      reformat-tags: true
+      chain-split-dots: false

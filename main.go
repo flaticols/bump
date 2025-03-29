@@ -64,12 +64,14 @@ func printfStderr(format string, a ...any) {
 		panic(err)
 	}
 }
+
 func printlnStderr(format string, a ...any) {
 	_, err := fmt.Fprintln(os.Stderr, fmt.Sprintf(format, a...))
 	if err != nil {
 		panic(err)
 	}
 }
+
 func versionPrinter(ver string) string {
 	return fmt.Sprintf("v%s", ver)
 }

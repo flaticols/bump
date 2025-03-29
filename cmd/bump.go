@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"errors"
-	"github.com/flaticols/bump/semver"
 	"os"
 	"os/exec"
 	"runtime/debug"
 
 	"github.com/flaticols/bump/internal"
+	"github.com/flaticols/bump/semver"
 	"github.com/spf13/cobra"
 )
 
@@ -19,10 +19,12 @@ const (
 	patch semVerPart = "patch"
 )
 
-type ColorTextPrinter func(format string, a ...any) string
-type VersionPrinter func(string) string
-type Printf func(format string, a ...any)
-type Println func(format string, a ...any)
+type (
+	ColorTextPrinter func(format string, a ...any) string
+	VersionPrinter   func(string) string
+	Printf           func(format string, a ...any)
+	Println          func(format string, a ...any)
+)
 
 type GitStater interface {
 	IsDefaultBranch() (string, bool, error)
@@ -60,7 +62,7 @@ type Options struct {
 	GitDetailer        GitStater
 	RepoDirectory      string
 	Verbose, LocalRepo bool
-	BraveMode          bool //ignore any warning just try to do all the things
+	BraveMode          bool
 	NoColor            bool
 	Exit               func()
 }
@@ -93,7 +95,7 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ver, err := opts.GitDetailer.GetCurrentVersion()
 			var tagErr internal.SemVerTagError
-			var nextVer *semver.Version
+			var nextVer semver.Version
 			if err != nil {
 				if errors.As(err, &tagErr) {
 					if !tagErr.NoTags {
@@ -101,8 +103,9 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 						os.Exit(1)
 					}
 
-					opts.P.Printf("%s no tags found, using default version %s\n", opts.P.Symbols.Bullet, opts.P.Version(internal.DefaultVersion))
-					ver = semver.MustParse("0.0.0")
+					opts.P.Printf("%s no tags found, using default version %s\n", opts.P.Symbols.Bullet,
+						opts.P.Version(internal.DefaultVersion))
+					ver, _ = semver.Parse("0.0.0")
 				} else {
 					return err
 				}
@@ -220,18 +223,15 @@ func getIncPart(args []string) semVerPart {
 	return patch
 }
 
-func createNewVersion(incPart semVerPart, ver *semver.Version) *semver.Version {
+func createNewVersion(incPart semVerPart, ver semver.Version) semver.Version {
 	switch incPart {
 	case major:
-		v := ver.IncMajor()
-		return &v
+		return ver.IncrementMajor()
 	case minor:
-		v := ver.IncMinor()
-		return &v
+		return ver.IncrementMinor()
 	case patch:
 		fallthrough
 	default:
-		v := ver.IncPatch()
-		return &v
+		return ver.IncrementPatch()
 	}
 }
