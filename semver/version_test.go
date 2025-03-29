@@ -48,6 +48,7 @@ func TestParseWithVPrefix(t *testing.T) {
 	tests := []parseTestsInput{
 		{"v1.2.3", false, nil, Version{1, 2, 3, nil, nil}},
 		{"v1.2.3-beta", false, nil, Version{1, 2, 3, []string{"beta"}, nil}},
+		{"v1.0.5-beta.1", false, nil, Version{1, 0, 5, []string{"beta", "1"}, nil}},
 		{"v1.2.3+build", false, nil, Version{1, 2, 3, nil, []string{"build"}}},
 		{"v1.2.3-beta+build", false, nil, Version{1, 2, 3, []string{"beta"}, []string{"build"}}},
 		{"v1.2.3-beta.1+build.123", false, nil, Version{1, 2, 3, []string{"beta", "1"}, []string{"build", "123"}}},
@@ -302,6 +303,7 @@ func TestIsValid(t *testing.T) {
 		"0.0.0",
 		"1.2.3",
 		"10.20.30",
+		"v1.2.3",
 		"1.0.0-alpha",
 		"1.0.0+build",
 	}
@@ -310,7 +312,6 @@ func TestIsValid(t *testing.T) {
 		"",
 		"1",
 		"1.2",
-		"v1.2.3",
 		"1.2.3.4",
 		"01.2.3",
 		"1.02.3",
@@ -319,13 +320,15 @@ func TestIsValid(t *testing.T) {
 
 	for _, v := range validVersions {
 		t.Run(v, func(t *testing.T) {
-			require.True(t, IsValid(v), "IsValid(%q) should be true", v)
+			_, ok := IsValid(v)
+			require.True(t, ok, "IsValid(%q) should be true", v)
 		})
 	}
 
 	for _, v := range invalidVersions {
 		t.Run(v, func(t *testing.T) {
-			require.False(t, IsValid(v), "IsValid(%q) should be false", v)
+			_, ok := IsValid(v)
+			require.False(t, ok, "IsValid(%q) should be false", v)
 		})
 	}
 }

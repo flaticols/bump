@@ -78,6 +78,180 @@ func (gs *TestableGitState) runGitCommand(args ...string) ([]byte, error) {
 	return gs.CmdRunner.Run("git", args...)
 }
 
+// getLatestGitTag modified version for TestableGitState
+func (gs *TestableGitState) getLatestGitTag() (string, error) {
+	// Run git command to get all tags with their creation dates
+	output, err := gs.runGitCommand("for-each-ref", "--sort=-creatordate", "--format=%(refname:short)", "refs/tags")
+	// If the command failed, check if it's because there are no tags
+	if err != nil {
+		// Convert output to string for error checking
+		errOutput := string(output)
+		if strings.Contains(errOutput, "No names found") ||
+			strings.Contains(errOutput, "No tags") ||
+			strings.Contains(errOutput, "fatal: No names found") {
+			return "", SemVerTagError{NoTags: true}
+		}
+		return "", err
+	}
+
+	// If there are no tags at all
+	if len(strings.TrimSpace(string(output))) == 0 {
+		return "", SemVerTagError{NoTags: true}
+	}
+
+	// Split the output by newlines
+	tags := strings.Split(strings.TrimSpace(string(output)), "\n")
+
+	// Iterate over the tags to find the first valid semver tag
+	for _, tag := range tags {
+		versionTag := strings.TrimPrefix(tag, "v")
+		if _, err := semverParse(versionTag); err == nil {
+			return tag, nil
+		}
+	}
+
+	// No valid semver tags found
+	return "", SemVerTagError{Msg: "no valid semver tags found"}
+}
+
+// Helper function to parse semver without importing the actual package
+func semverParse(version string) (interface{}, error) {
+	// This is a dummy implementation, as we're just testing the git command logic
+	parts := strings.Split(version, ".")
+	if len(parts) < 3 {
+		return nil, SemVerTagError{Tag: version, Msg: "invalid semver format"}
+	}
+
+	// Check if each part is a number
+	for _, part := range parts[:3] { // Only check the first three parts (major.minor.patch)
+		// Simple check if the string contains only digits
+		for _, char := range part {
+			if char < '0' || char > '9' {
+				return nil, SemVerTagError{Tag: version, Msg: "invalid semver format"}
+			}
+		}
+	}
+
+	return struct{}{}, nil
+}
+
+// TestGetLatestGitTag tests the getLatestGitTag function
+func TestGetLatestGitTag(t *testing.T) {
+	testCases := []struct {
+		name        string
+		mockOutput  string
+		mockError   error
+		expectedTag string
+		expectError bool
+	}{
+		{
+			name:        "No tags in repository",
+			mockOutput:  "",
+			mockError:   nil,
+			expectedTag: "",
+			expectError: true,
+		},
+		{
+			name:        "No valid semver tags",
+			mockOutput:  "invalid-tag-1\ninvalid-tag-2",
+			mockError:   nil,
+			expectedTag: "",
+			expectError: true,
+		},
+		{
+			name:        "Single valid semver tag",
+			mockOutput:  "v1.2.3",
+			mockError:   nil,
+			expectedTag: "v1.2.3",
+			expectError: false,
+		},
+		{
+			name:        "Multiple tags, first is valid",
+			mockOutput:  "v2.0.0\ntag-not-semver\nv1.0.0",
+			mockError:   nil,
+			expectedTag: "v2.0.0",
+			expectError: false,
+		},
+		{
+			name:        "Command execution error",
+			mockOutput:  "",
+			mockError:   exec.ErrNotFound,
+			expectedTag: "",
+			expectError: true,
+		},
+		{
+			name: "Mixed tags with v45.0.1 as valid semver tag",
+			mockOutput: `pkg/my-latest-tag.1
+pkg/my-latest-tag.2
+v45.0.1
+pkg/my-latest-tag.4
+v76.0.45
+foobar
+bazbar
+v76
+test.tag.2
+78
+testtag5454
+v0.2.3`,
+			mockError:   nil,
+			expectedTag: "v45.0.1",
+			expectError: false,
+		},
+		{
+			name: "Multiple valid semver tags in mixed list",
+			mockOutput: `random-tag
+v2.1.0
+invalid-tag
+v1.0.0
+another-invalid-tag`,
+			mockError:   nil,
+			expectedTag: "v2.1.0",
+			expectError: false,
+		},
+		{
+			name: "Only the last tag is a valid semver",
+			mockOutput: `random-tag
+invalid.tag.1
+incomplete.tag
+v1.2.3`,
+			mockError:   nil,
+			expectedTag: "v1.2.3",
+			expectError: false,
+		},
+		{
+			name: "Tag with v prefix but invalid semver format",
+			mockOutput: `v123
+vinvalid
+v1.2`,
+			mockError:   nil,
+			expectedTag: "",
+			expectError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create a mock CommandRunner
+			mockRunner := NewMockCommandRunner()
+			mockRunner.SetOutput("git for-each-ref --sort=-creatordate --format=%(refname:short) refs/tags",
+				[]byte(tc.mockOutput), tc.mockError)
+
+			// Create a testable GitState with the mock runner
+			gs := &TestableGitState{CmdRunner: mockRunner}
+
+			// Call the testable version of getLatestGitTag
+			tag, err := gs.getLatestGitTag()
+
+			if tc.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tc.expectedTag, tag)
+			}
+		})
+	}
+}
+
 // Modified methods to use the CommandRunner
 
 // CheckLocalChanges checks for uncommitted changes in the local Git repository
@@ -210,7 +384,3 @@ func TestIsDefaultBranch(t *testing.T) {
 		})
 	}
 }
-
-// Note: In a real implementation, you would implement all methods of GitState
-// in TestableGitState and write tests for each. This is a simplified version
-// to demonstrate the approach.
