@@ -135,22 +135,17 @@ func (gs *GitState) HasRemoteUnfetchedTags() (bool, error) {
 		if line == "" {
 			continue
 		}
-
 		// Extract tag name from line like "hash refs/tags/tagname"
 		parts := strings.Split(line, "\t")
 		if len(parts) < 2 {
 			continue
 		}
-
 		refPath := parts[1]
 		// Skip tag pointers (^{})
 		if strings.Contains(refPath, "^{}") {
 			continue
 		}
-
-		// Extract the tag name from refs/tags/tagname
 		tagName := strings.TrimPrefix(refPath, "refs/tags/")
-
 		// If this remote tag is not in our local tags, we have unfetched tags
 		if !localTagSet[tagName] {
 			return true, nil
@@ -172,11 +167,9 @@ func (gs *GitState) IsDefaultBranch() (string, bool, error) {
 		// Try using symbolic-ref instead which works for repos without commits
 		fallbackCmd := exec.Command("git", "symbolic-ref", "HEAD")
 		fallbackOutput, fallbackErr := fallbackCmd.Output()
-
 		if fallbackErr != nil {
 			return "", false, fmt.Errorf("failed to get current branch: %w", fallbackErr)
 		}
-
 		// Remove the refs/heads/ prefix from the output
 		branchRef := strings.TrimSpace(string(fallbackOutput))
 		b := strings.TrimPrefix(branchRef, "refs/heads/")
@@ -217,43 +210,6 @@ func (gs *GitState) HasUnpushedChanges(currentBranch string) (bool, error) {
 	return count != "0", nil
 }
 
-// getLatestGitTag retrieves the latest Git tag from the current repository.
-// Returns the tag as a string, a boolean indicating initialization state, and an error if unsuccessful.
-func getLatestGitTag() (string, error) {
-	// Run git command to get all tags with their creation dates
-	cmd := exec.Command("git", "for-each-ref", "--sort=-creatordate", "--format=%(refname:short)", "refs/tags")
-	output, err := cmd.CombinedOutput()
-	// If the command failed, check if it's because there are no tags
-	if err != nil {
-		// Convert output to string for error checking
-		errOutput := string(output)
-		if strings.Contains(errOutput, "No names found") ||
-			strings.Contains(errOutput, "No tags") ||
-			strings.Contains(errOutput, "fatal: No names found") {
-			return "", SemVerTagError{NoTags: true}
-		}
-		return "", fmt.Errorf("error getting git tags: %v - %s", err, string(output))
-	}
-
-	// If there are no tags at all
-	if len(strings.TrimSpace(string(output))) == 0 {
-		return "", SemVerTagError{NoTags: true}
-	}
-
-	// Split the output by newlines
-	tags := strings.Split(strings.TrimSpace(string(output)), "\n")
-
-	// Iterate over the tags to find the first valid semver tag
-	for _, tag := range tags {
-		if semver.IsValid(tag) {
-			return tag, nil
-		}
-	}
-
-	// No valid semver tags found
-	return "", SemVerTagError{Msg: "no valid semver tags found"}
-}
-
 // SetGitTag creates a new Git tag with the specified name and returns an error if the process fails or the tag could not be created.
 func (gs *GitState) SetGitTag(tag string) error {
 	cmd := exec.Command("git", "tag", tag)
@@ -281,17 +237,7 @@ func (gs *GitState) GetCurrentVersion() (semver.Version, error) {
 	if err != nil {
 		return semver.Version{}, err
 	}
-
-	// Remove 'v' prefix if present
-	tag = strings.TrimPrefix(tag, "v")
-
-	// Parse the version string
-	version, err := semver.Parse(tag)
-	if err != nil {
-		return semver.Version{}, SemVerTagError{Tag: tag, Msg: err.Error()}
-	}
-
-	return version, nil
+	return tag, nil
 }
 
 func (gs *GitState) RemoveLocalGitTag(tag string) error {
@@ -311,4 +257,39 @@ func (gs *GitState) RemoveRemoteGitTag(tag string) error {
 		return fmt.Errorf("error removing remote git tag: %v - %s", err, string(output))
 	}
 	return nil
+}
+
+// getLatestGitTag retrieves the latest Git tag from the current repository.
+// Returns the tag as a string, a boolean indicating initialization state, and an error if unsuccessful.
+func getLatestGitTag() (semver.Version, error) {
+	// Run git command to get all tags with their creation dates
+	cmd := exec.Command("git", "for-each-ref", "--sort=-creatordate", "--format=%(refname:short)", "refs/tags")
+	output, err := cmd.CombinedOutput()
+	// If the command failed, check if it's because there are no tags
+	if err != nil {
+		// Convert output to string for error checking
+		errOutput := string(output)
+		if strings.Contains(errOutput, "No names found") ||
+			strings.Contains(errOutput, "No tags") ||
+			strings.Contains(errOutput, "fatal: No names found") {
+			return semver.Version{}, SemVerTagError{NoTags: true}
+		}
+		return semver.Version{}, fmt.Errorf("error getting git tags: %v - %s", err, string(output))
+	}
+
+	// If there are no tags at all
+	if len(strings.TrimSpace(string(output))) == 0 {
+		return semver.Version{}, SemVerTagError{NoTags: true, Msg: "no tags found"}
+	}
+	// Split the output by newlines
+	tags := strings.Split(strings.TrimSpace(string(output)), "\n")
+	// Iterate over the tags to find the first valid semver tag
+	for _, tag := range tags {
+		if ver, ok := semver.IsValid(tag); ok {
+			return ver, nil
+		}
+	}
+
+	// No valid semver tags found
+	return semver.Version{}, SemVerTagError{Msg: "no valid semver tags found"}
 }

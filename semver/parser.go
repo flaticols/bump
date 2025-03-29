@@ -172,9 +172,14 @@ func validateIdentifier(id string, isPrerelease bool) error {
 }
 
 // IsValid returns true if the version string is valid SemVer.
-func IsValid(version string) bool {
-	_, err := Parse(version)
-	return err == nil
+func IsValid(version string) (Version, bool) {
+	v, err := Parse(version)
+	if err != nil {
+		v, err = ParseWithVPrefix(version)
+		return v, err == nil
+	}
+
+	return v, true
 }
 
 // IsValidWithVPrefix returns true if the version string is valid SemVer,
