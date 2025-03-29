@@ -12,11 +12,15 @@ import (
 
 const DefaultVersion = "0.0.1"
 
-type SemVerTagError struct {
-	NoTags bool
-	Tag    string
-	Msg    string
-}
+type (
+	SemVerTagError struct {
+		NoTags bool
+		Tag    string
+		Msg    string
+	}
+
+	GitState struct{}
+)
 
 func (e SemVerTagError) Error() string {
 	if e.Msg != "" {
@@ -26,9 +30,6 @@ func (e SemVerTagError) Error() string {
 }
 
 var defaultBranches = []string{"main", "master", "develop", "feature", "release", "hotfix", "bugfix", "latest"}
-
-type GitState struct {
-}
 
 // CheckLocalChanges checks for uncommitted changes in the local Git repository by running `git status --porcelain` and returns the status.
 func (gs *GitState) CheckLocalChanges() (bool, error) {
@@ -160,12 +161,12 @@ func (gs *GitState) HasRemoteUnfetchedTags() (bool, error) {
 	return false, nil
 }
 
-// IsDefaultBranch checks if the current Git branch is one of the predefined default branches and returns a boolean and an error if one occurs.
+// IsDefaultBranch checks if the current Git branch is one of the predefined default branches.
+// Returns a boolean and an error if one occurs.
 func (gs *GitState) IsDefaultBranch() (string, bool, error) {
 	// Try the normal approach first
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
 	output, err := cmd.CombinedOutput()
-
 	// If the command fails, try the fallback method
 	if err != nil {
 		// Try using symbolic-ref instead which works for repos without commits
@@ -196,7 +197,6 @@ func (gs *GitState) HasUnpushedChanges(currentBranch string) (bool, error) {
 
 	cmd := exec.Command("git", "rev-list", "--count", fmt.Sprintf("origin/%s..%s", currentBranch, currentBranch))
 	output, err := cmd.Output()
-
 	if err != nil {
 		checkRemoteBranchCmd := exec.Command("git", "ls-remote", "--heads", "origin", currentBranch)
 		remoteBranchOutput, _ := checkRemoteBranchCmd.Output()
@@ -223,7 +223,6 @@ func getLatestGitTag() (string, error) {
 	// Run git command to get all tags with their creation dates
 	cmd := exec.Command("git", "for-each-ref", "--sort=-creatordate", "--format=%(refname:short)", "refs/tags")
 	output, err := cmd.CombinedOutput()
-
 	// If the command failed, check if it's because there are no tags
 	if err != nil {
 		// Convert output to string for error checking
@@ -246,9 +245,7 @@ func getLatestGitTag() (string, error) {
 
 	// Iterate over the tags to find the first valid semver tag
 	for _, tag := range tags {
-		tag = strings.TrimPrefix(tag, "V")
 		if semver.IsValid(tag) {
-			// This is a valid semver tag
 			return tag, nil
 		}
 	}

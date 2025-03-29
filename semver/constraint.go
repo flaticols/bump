@@ -170,37 +170,6 @@ func ParseConstraintSetWithVPrefix(constraints string) (ConstraintSet, error) {
 	return parseConstraintSetWithVPrefixOption(constraints, true)
 }
 
-// parseConstraintSetWithVPrefixOption is the internal implementation of ParseConstraintSet
-// with an option to allow 'v' prefix for versions.
-func parseConstraintSetWithVPrefixOption(constraints string, allowVPrefix bool) (ConstraintSet, error) {
-	constraintList := strings.Split(constraints, ",")
-	result := make(ConstraintSet, 0, len(constraintList))
-
-	for _, c := range constraintList {
-		c = strings.TrimSpace(c)
-		if c == "" {
-			continue
-		}
-
-		var constraint Constraint
-		var err error
-
-		if allowVPrefix {
-			constraint, err = ParseConstraintWithVPrefix(c)
-		} else {
-			constraint, err = ParseConstraint(c)
-		}
-
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, constraint)
-	}
-
-	return result, nil
-}
-
 // Check checks if a version satisfies a constraint.
 func (c Constraint) Check(version Version) bool {
 	switch c.Operator {
@@ -325,4 +294,35 @@ func (cs ConstraintSet) String() string {
 	}
 
 	return strings.Join(parts, ", ")
+}
+
+// parseConstraintSetWithVPrefixOption is the internal implementation of ParseConstraintSet
+// with an option to allow 'v' prefix for versions.
+func parseConstraintSetWithVPrefixOption(constraints string, allowVPrefix bool) (ConstraintSet, error) {
+	constraintList := strings.Split(constraints, ",")
+	result := make(ConstraintSet, 0, len(constraintList))
+
+	for _, c := range constraintList {
+		c = strings.TrimSpace(c)
+		if c == "" {
+			continue
+		}
+
+		var constraint Constraint
+		var err error
+
+		if allowVPrefix {
+			constraint, err = ParseConstraintWithVPrefix(c)
+		} else {
+			constraint, err = ParseConstraint(c)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, constraint)
+	}
+
+	return result, nil
 }
