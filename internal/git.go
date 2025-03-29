@@ -6,7 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/Masterminds/semver/v3"
+	//	"github.com/Masterminds/semver/v3"
+	"github.com/flaticols/bump/semver"
 )
 
 const DefaultVersion = "0.0.1"
@@ -219,8 +220,8 @@ func (gs *GitState) HasUnpushedChanges(currentBranch string) (bool, error) {
 // getLatestGitTag retrieves the latest Git tag from the current repository.
 // Returns the tag as a string, a boolean indicating initialization state, and an error if unsuccessful.
 func getLatestGitTag() (string, error) {
-	// Run git command to get all tags
-	cmd := exec.Command("git", "tag")
+	// Run git command to get all tags with their creation dates
+	cmd := exec.Command("git", "for-each-ref", "--sort=-creatordate", "--format=%(refname:short)", "refs/tags")
 	output, err := cmd.CombinedOutput()
 
 	// If the command failed, check if it's because there are no tags
@@ -243,27 +244,17 @@ func getLatestGitTag() (string, error) {
 	// Split the output by newlines
 	tags := strings.Split(strings.TrimSpace(string(output)), "\n")
 
-	var highestSemver *semver.Version
-	var highestTag string
-
-	// Find the highest semver tag
+	// Iterate over the tags to find the first valid semver tag
 	for _, tag := range tags {
-		v, err := semver.NewVersion(tag)
-		if err == nil {
+		tag = strings.TrimPrefix(tag, "V")
+		if semver.IsValid(tag) {
 			// This is a valid semver tag
-			if highestSemver == nil || v.GreaterThan(highestSemver) {
-				highestSemver = v
-				highestTag = tag
-			}
+			return tag, nil
 		}
 	}
 
-	if highestSemver == nil {
-		// No valid semver tags found
-		return "", SemVerTagError{Msg: "not valid semver tags found"}
-	}
-
-	return highestTag, nil
+	// No valid semver tags found
+	return "", SemVerTagError{Msg: "no valid semver tags found"}
 }
 
 // SetGitTag creates a new Git tag with the specified name and returns an error if the process fails or the tag could not be created.
@@ -288,19 +279,19 @@ func (gs *GitState) PushGitTag(tag string) error {
 
 // GetCurrentVersion retrieves the current version state from Git tags.
 // Returns the current version as a semver.Version and an error if unsuccessful.
-func (gs *GitState) GetCurrentVersion() (*semver.Version, error) {
+func (gs *GitState) GetCurrentVersion() (semver.Version, error) {
 	tag, err := getLatestGitTag()
 	if err != nil {
-		return nil, err
+		return semver.Version{}, err
 	}
 
 	// Remove 'v' prefix if present
 	tag = strings.TrimPrefix(tag, "v")
 
 	// Parse the version string
-	version, err := semver.NewVersion(tag)
+	version, err := semver.Parse(tag)
 	if err != nil {
-		return nil, SemVerTagError{Tag: tag, Msg: err.Error()}
+		return semver.Version{}, SemVerTagError{Tag: tag, Msg: err.Error()}
 	}
 
 	return version, nil
@@ -315,7 +306,7 @@ func (gs *GitState) RemoveLocalGitTag(tag string) error {
 	return nil
 }
 
-// removeRemoteGitTag deletes a git tag from the remote repository
+// RemoveRemoteGitTag deletes a git tag from the remote repository
 func (gs *GitState) RemoveRemoteGitTag(tag string) error {
 	cmd := exec.Command("git", "push", "--delete", "origin", tag)
 	output, err := cmd.CombinedOutput()
