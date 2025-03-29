@@ -125,8 +125,6 @@ func (ver Version) GetPrereleaseMap() map[string]string {
 	return result
 }
 
-// Package-level functions to replace pointer receivers
-
 // SetPrerelease creates a new Version with the given prerelease identifiers.
 func SetPrerelease(v Version, prerelease []string) Version {
 	v.Prerelease = prerelease
@@ -139,10 +137,7 @@ func SetMetadata(v Version, metadata []string) Version {
 	return v
 }
 
-// SetPrereleaseMap creates a new Version with prerelease identifiers from a map.
-// Each key-value pair is added as two separate identifiers.
-// For example, {"feature": "x", "build": "123"} becomes ["feature", "x", "build", "123"].
-// This is a convention and not part of the SemVer spec.
+// SetPrereleaseMap sets the prerelease identifiers of a Version using the provided map and returns the updated Version.
 func SetPrereleaseMap(v Version, prerelease map[string]string) Version {
 	v.Prerelease = make([]string, 0, len(prerelease)*2)
 	for k, val := range prerelease {
@@ -151,11 +146,7 @@ func SetPrereleaseMap(v Version, prerelease map[string]string) Version {
 	return v
 }
 
-// SetMetadataMap creates a new Version with metadata identifiers from a map.
-// Each key-value pair is added as two separate identifiers.
-// For example, {"commit": "abc123", "timestamp": "1234567890"} becomes
-// ["commit", "abc123", "timestamp", "1234567890"].
-// This is a convention and not part of the SemVer spec.
+// SetMetadataMap updates the metadata of a Version using the provided map and returns the updated Version. Each key-value pair is stored alternately.
 func SetMetadataMap(v Version, metadata map[string]string) Version {
 	v.Metadata = make([]string, 0, len(metadata)*2)
 	for k, val := range metadata {
