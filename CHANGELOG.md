@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.7] - 2025-03-29
+
+### Added
+- `semver` package. Implement a full version 2 spec of semver.
+
+### Fixed
+- Improvement of latest semver teg detection (thanks to @emicklei)
+
 ## [0.0.6] - 2025-03-27
 
 ### Added
