@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strings"
 
-	//	"github.com/Masterminds/semver/v3"
 	"github.com/flaticols/bump/semver"
 )
 
@@ -19,7 +18,10 @@ type (
 		Msg    string
 	}
 
-	GitState struct{}
+	GitState struct {
+		locallOnly    bool
+		currentBranch string
+	}
 )
 
 func (e SemVerTagError) Error() string {
@@ -30,6 +32,15 @@ func (e SemVerTagError) Error() string {
 }
 
 var defaultBranches = []string{"main", "master", "develop", "feature", "release", "hotfix", "bugfix", "latest"}
+
+// GetCurrentBranch retrieves the current branch name from the Git repository.
+func (gs *GitState) GetCurrentBranch() string {
+	return gs.currentBranch
+}
+
+func (gs *GitState) SetLocalOnly(val bool) {
+	gs.locallOnly = val
+}
 
 // CheckLocalChanges checks for uncommitted changes in the local Git repository by running `git status --porcelain` and returns the status.
 func (gs *GitState) CheckLocalChanges() (bool, error) {
@@ -46,14 +57,14 @@ func (gs *GitState) CheckLocalChanges() (bool, error) {
 
 // CheckRemoteChanges checks if there are changes in the remote repository that are not present in the local repository.
 // It fetches the latest changes from the remote and compares the local branch with the tracking branch to detect differences.
-func (gs *GitState) CheckRemoteChanges(allowNoRemotes bool) (bool, error) {
+func (gs *GitState) CheckRemoteChanges() (bool, error) {
 	// First check if remotes exist
 	remoteCmd := exec.Command("git", "remote")
 	remoteOutput, err := remoteCmd.Output()
 
 	// If no remotes exist
 	if err != nil || len(strings.TrimSpace(string(remoteOutput))) == 0 {
-		if !allowNoRemotes {
+		if !gs.locallOnly {
 			return false, fmt.Errorf("no remotes found in repository")
 		}
 		// If we don't want to error on no remotes, just return no changes
@@ -158,7 +169,7 @@ func (gs *GitState) HasRemoteUnfetchedTags() (bool, error) {
 
 // IsDefaultBranch checks if the current Git branch is one of the predefined default branches.
 // Returns a boolean and an error if one occurs.
-func (gs *GitState) IsDefaultBranch() (string, bool, error) {
+func (gs *GitState) IsDefaultBranch() (bool, error) {
 	// Try the normal approach first
 	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
 	output, err := cmd.CombinedOutput()
@@ -168,19 +179,20 @@ func (gs *GitState) IsDefaultBranch() (string, bool, error) {
 		fallbackCmd := exec.Command("git", "symbolic-ref", "HEAD")
 		fallbackOutput, fallbackErr := fallbackCmd.Output()
 		if fallbackErr != nil {
-			return "", false, fmt.Errorf("failed to get current branch: %w", fallbackErr)
+			return false, fmt.Errorf("failed to get current branch: %w", fallbackErr)
 		}
 		// Remove the refs/heads/ prefix from the output
 		branchRef := strings.TrimSpace(string(fallbackOutput))
 		b := strings.TrimPrefix(branchRef, "refs/heads/")
-		return b, slices.Contains(defaultBranches, b), nil
+		gs.currentBranch = b
+		return slices.Contains(defaultBranches, b), nil
 	}
-
 	b := strings.TrimSpace(string(output))
-	return b, slices.Contains(defaultBranches, b), nil
+	gs.currentBranch = b
+	return slices.Contains(defaultBranches, b), nil
 }
 
-func (gs *GitState) HasUnpushedChanges(currentBranch string) (bool, error) {
+func (gs *GitState) HasUnpushedChanges() (bool, error) {
 	remoteCmd := exec.Command("git", "remote")
 	remoteOutput, err := remoteCmd.Output()
 
@@ -188,14 +200,14 @@ func (gs *GitState) HasUnpushedChanges(currentBranch string) (bool, error) {
 		return false, nil
 	}
 
-	cmd := exec.Command("git", "rev-list", "--count", fmt.Sprintf("origin/%s..%s", currentBranch, currentBranch))
+	cmd := exec.Command("git", "rev-list", "--count", fmt.Sprintf("origin/%s..%s", gs.currentBranch, gs.currentBranch))
 	output, err := cmd.Output()
 	if err != nil {
-		checkRemoteBranchCmd := exec.Command("git", "ls-remote", "--heads", "origin", currentBranch)
+		checkRemoteBranchCmd := exec.Command("git", "ls-remote", "--heads", "origin", gs.currentBranch)
 		remoteBranchOutput, _ := checkRemoteBranchCmd.Output()
 
 		if len(strings.TrimSpace(string(remoteBranchOutput))) == 0 {
-			checkLocalCommitsCmd := exec.Command("git", "rev-list", "--count", currentBranch)
+			checkLocalCommitsCmd := exec.Command("git", "rev-list", "--count", gs.currentBranch)
 			localCommitsOutput, localErr := checkLocalCommitsCmd.Output()
 			if localErr != nil {
 				return false, fmt.Errorf("failed to check local commits: %w", localErr)
@@ -233,7 +245,7 @@ func (gs *GitState) PushGitTag(tag string) error {
 // GetCurrentVersion retrieves the current version state from Git tags.
 // Returns the current version as a semver.Version and an error if unsuccessful.
 func (gs *GitState) GetCurrentVersion() (semver.Version, error) {
-	tag, err := getLatestGitTag()
+	tag, err := gs.getLatestGitTag()
 	if err != nil {
 		return semver.Version{}, err
 	}
@@ -261,7 +273,7 @@ func (gs *GitState) RemoveRemoteGitTag(tag string) error {
 
 // getLatestGitTag retrieves the latest Git tag from the current repository.
 // Returns the tag as a string, a boolean indicating initialization state, and an error if unsuccessful.
-func getLatestGitTag() (semver.Version, error) {
+func (gs *GitState) getLatestGitTag() (semver.Version, error) {
 	// Run git command to get all tags with their creation dates
 	cmd := exec.Command("git", "for-each-ref", "--sort=-creatordate", "--format=%(refname:short)", "refs/tags")
 	output, err := cmd.CombinedOutput()

@@ -27,14 +27,14 @@ func main() {
 				Bullet:  color.New(color.FgWhite).Sprintf("•"),
 			},
 		},
-		GitDetailer: &internal.GitState{},
+		Git: &internal.GitState{},
 	}
 
 	// Create the root command
 	rootCmd := cmd.CreateRootCmd(opts)
 
 	rootCmd.PersistentFlags().StringVarP(&opts.RepoDirectory, "repo", "r", "", "path to the repository")
-	rootCmd.PersistentFlags().BoolVarP(&opts.Verbose, "verbose", "v", false, "enable verbose output")
+	rootCmd.PersistentFlags().BoolVar(&opts.Verbose, "verbose", false, "enable verbose output")
 	rootCmd.PersistentFlags().BoolVarP(&opts.LocalRepo, "local", "l", false, "if local is set, bump will not error if no remotes are found")
 	rootCmd.PersistentFlags().BoolVarP(&opts.BraveMode, "brave", "b", false, "if brave is set, bump will not ask any questions (default: false)")
 	rootCmd.PersistentFlags().BoolVar(&opts.NoColor, "no-color", false, "disable colorful output (default: false)")
@@ -51,6 +51,7 @@ func main() {
 	rootCmd.AddCommand(undoCmd)
 
 	color.NoColor = opts.NoColor
+	opts.Git.SetLocalOnly(opts.LocalRepo)
 
 	rootCmd.ErrOrStderr()
 	if err := rootCmd.Execute(); err != nil {
