@@ -27,10 +27,13 @@ type (
 )
 
 type GitStater interface {
-	IsDefaultBranch() (string, bool, error)
+	SetLocalOnly(val bool)
+
+	IsDefaultBranch() (bool, error)
+	GetCurrentBranch() string
 	CheckLocalChanges() (bool, error)
-	CheckRemoteChanges(allowNoRemotes bool) (bool, error)
-	HasUnpushedChanges(currentBranch string) (bool, error)
+	CheckRemoteChanges() (bool, error)
+	HasUnpushedChanges() (bool, error)
 	HasRemoteUnfetchedTags() (bool, error)
 	GetCurrentVersion() (semver.Version, error)
 	SetGitTag(string) error
@@ -59,7 +62,7 @@ type TextPrinters struct {
 
 type Options struct {
 	P                  TextPrinters
-	GitDetailer        GitStater
+	Git                GitStater
 	RepoDirectory      string
 	Verbose, LocalRepo bool
 	BraveMode          bool
@@ -93,7 +96,7 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 			gitStateChecks(opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ver, err := opts.GitDetailer.GetCurrentVersion()
+			ver, err := opts.Git.GetCurrentVersion()
 			var tagErr internal.SemVerTagError
 			var nextVer semver.Version
 			if err != nil {
@@ -120,14 +123,14 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 				opts.P.Printf("%s bump tag %s => %s\n", opts.P.Symbols.Bullet, opts.P.Version(ver.String()), tag)
 			}
 
-			err = opts.GitDetailer.SetGitTag(tag)
+			err = opts.Git.SetGitTag(tag)
 			if err != nil {
 				return err
 			}
 			opts.P.Printf("%s tag %s created\n", opts.P.Symbols.Ok, tag)
 
 			if !opts.LocalRepo {
-				err = opts.GitDetailer.PushGitTag(tag)
+				err = opts.Git.PushGitTag(tag)
 				if err != nil {
 					return err
 				}
@@ -151,18 +154,18 @@ func gitStateChecks(opts *Options) {
 		}
 	}
 
-	b, yes, err := opts.GitDetailer.IsDefaultBranch()
+	yes, err := opts.Git.IsDefaultBranch()
 	if err != nil {
 		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
 		exitIfNotBrave()
 	} else if !yes {
-		opts.P.Printf("%s not on default branch (%s)\n", opts.P.Symbols.Error, b)
+		opts.P.Printf("%s not on default branch (%s)\n", opts.P.Symbols.Error, opts.Git.GetCurrentBranch())
 		exitIfNotBrave()
 	} else {
-		opts.P.Printf("%s on default branch (%s)\n", opts.P.Symbols.Ok, b)
+		opts.P.Printf("%s on default branch (%s)\n", opts.P.Symbols.Ok, opts.Git.GetCurrentBranch())
 	}
 
-	if yes, err := opts.GitDetailer.CheckLocalChanges(); err != nil {
+	if yes, err := opts.Git.CheckLocalChanges(); err != nil {
 		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
 		exitIfNotBrave()
 	} else if yes {
@@ -172,7 +175,7 @@ func gitStateChecks(opts *Options) {
 		opts.P.Printf("%s no uncommitted changes\n", opts.P.Symbols.Ok)
 	}
 
-	if yes, err := opts.GitDetailer.CheckRemoteChanges(opts.LocalRepo); err != nil {
+	if yes, err := opts.Git.CheckRemoteChanges(); err != nil {
 		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
 		exitIfNotBrave()
 	} else if yes {
@@ -182,7 +185,7 @@ func gitStateChecks(opts *Options) {
 		opts.P.Printf("%s no remote changes\n", opts.P.Symbols.Ok)
 	}
 
-	if yes, err := opts.GitDetailer.HasUnpushedChanges(b); err != nil {
+	if yes, err := opts.Git.HasUnpushedChanges(); err != nil {
 		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
 		exitIfNotBrave()
 	} else if yes {
@@ -194,7 +197,7 @@ func gitStateChecks(opts *Options) {
 
 	// Check for unfetched remote tags
 	if !opts.LocalRepo {
-		if yes, err := opts.GitDetailer.HasRemoteUnfetchedTags(); err != nil {
+		if yes, err := opts.Git.HasRemoteUnfetchedTags(); err != nil {
 			opts.P.Printf("%s %s\n", opts.P.Symbols.Warning, err.Error())
 		} else if yes {
 			opts.P.Printf("%s remote has new tags, fetching tags first\n", opts.P.Symbols.Warning)

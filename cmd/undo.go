@@ -18,7 +18,7 @@ func CreateUndoCmd(opts *Options) *cobra.Command {
 		Example: "  bump undo           # Removes the latest tag (" +
 			"prompts for confirmation)\n  bump undo --brave   # Removes the latest tag without confirmation",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ver, err := opts.GitDetailer.GetCurrentVersion()
+			ver, err := opts.Git.GetCurrentVersion()
 			var tagErr internal.SemVerTagError
 			if err != nil {
 				if errors.As(err, &tagErr) {
@@ -37,12 +37,12 @@ func CreateUndoCmd(opts *Options) *cobra.Command {
 
 			if confirm {
 				opts.P.Printf("%s removing tag %s\n", opts.P.Symbols.Bullet, opts.P.Info(tag))
-				if err := opts.GitDetailer.RemoveLocalGitTag(tag); err != nil {
+				if err := opts.Git.RemoveLocalGitTag(tag); err != nil {
 					return err
 				}
 				opts.P.Printf("%s local tag removed\n", opts.P.Symbols.Ok)
 				if !opts.LocalRepo {
-					if err := opts.GitDetailer.RemoveRemoteGitTag(tag); err != nil {
+					if err := opts.Git.RemoveRemoteGitTag(tag); err != nil {
 						opts.P.Printf("%s remote tag not removed\n", opts.P.Symbols.Error)
 						opts.P.Printf("%s error: %s\n", opts.P.Symbols.Error, err.Error())
 						os.Exit(1)

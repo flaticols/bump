@@ -146,7 +146,8 @@ func SetPrereleaseMap(v Version, prerelease map[string]string) Version {
 	return v
 }
 
-// SetMetadataMap updates the metadata of a Version using the provided map and returns the updated Version. Each key-value pair is stored alternately.
+// SetMetadataMap updates the metadata of a Version using the provided map and returns the updated Version.
+// Each key-value pair is stored alternately.
 func SetMetadataMap(v Version, metadata map[string]string) Version {
 	v.Metadata = make([]string, 0, len(metadata)*2)
 	for k, val := range metadata {
