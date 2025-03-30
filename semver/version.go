@@ -19,6 +19,8 @@ func (ver Version) String() string {
 	return ver.string(false)
 }
 
+// Stringv returns the string representation of the Version object,
+// including the "v" prefix if applicable.
 func (ver Version) Stringv() string {
 	return ver.string(true)
 }

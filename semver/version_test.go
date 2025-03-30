@@ -34,18 +34,6 @@ func TestParse(t *testing.T) {
 		{"1.2.3-beta!1", true, ErrInvalidIdentifierChars, Version{}},
 		{"", true, ErrEmptyVersion, Version{}},
 		{"v1.2.3", true, ErrNonDigitComponent, Version{}}, // Regular Parse should reject 'v' prefix
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			got, err := Parse(tt.input)
-			parseTestChecks(t, tt, err, got)
-		})
-	}
-}
-
-func TestParseWithVPrefix(t *testing.T) {
-	tests := []parseTestsInput{
 		{"v1.2.3", false, nil, Version{1, 2, 3, nil, nil}},
 		{"v1.2.3-beta", false, nil, Version{1, 2, 3, []string{"beta"}, nil}},
 		{"v1.0.5-beta.1", false, nil, Version{1, 0, 5, []string{"beta", "1"}, nil}},
@@ -70,7 +58,7 @@ func TestParseWithVPrefix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			got, err := ParseWithVPrefix(tt.input)
+			got, err := Parse(tt.input)
 			parseTestChecks(t, tt, err, got)
 		})
 	}
@@ -100,28 +88,6 @@ func TestCompare(t *testing.T) {
 		{"1.0.0+build", "1.0.0", 0},
 		{"1.0.0", "1.0.0+build", 0},
 		{"1.0.0+build.1", "1.0.0+build.2", 0},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.v1+" vs "+tt.v2, func(t *testing.T) {
-			v1, err := Parse(tt.v1)
-			require.NoError(t, err, "Failed to parse v1 %s", tt.v1)
-
-			v2, err := Parse(tt.v2)
-			require.NoError(t, err, "Failed to parse v2 %s", tt.v2)
-
-			got := Compare(v1, v2)
-			require.Equal(t, tt.expected, got)
-		})
-	}
-}
-
-func TestCompareWithVPrefix(t *testing.T) {
-	tests := []struct {
-		v1       string
-		v2       string
-		expected int
-	}{
 		{"v1.0.0", "v1.0.0", 0},
 		{"v1.0.0", "v2.0.0", -1},
 		{"v2.0.0", "v1.0.0", 1},
@@ -136,10 +102,10 @@ func TestCompareWithVPrefix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.v1+" vs "+tt.v2, func(t *testing.T) {
-			v1, err := ParseWithVPrefix(tt.v1)
+			v1, err := Parse(tt.v1)
 			require.NoError(t, err, "Failed to parse v1 %s", tt.v1)
 
-			v2, err := ParseWithVPrefix(tt.v2)
+			v2, err := Parse(tt.v2)
 			require.NoError(t, err, "Failed to parse v2 %s", tt.v2)
 
 			got := Compare(v1, v2)
@@ -306,6 +272,12 @@ func TestIsValid(t *testing.T) {
 		"v1.2.3",
 		"1.0.0-alpha",
 		"1.0.0+build",
+		"0.0.0",
+		"1.2.3",
+		"v1.2.3",
+		"v10.20.30",
+		"v1.0.0-alpha",
+		"v1.0.0+build",
 	}
 
 	invalidVersions := []string{
@@ -316,34 +288,6 @@ func TestIsValid(t *testing.T) {
 		"01.2.3",
 		"1.02.3",
 		"1.2.03",
-	}
-
-	for _, v := range validVersions {
-		t.Run(v, func(t *testing.T) {
-			_, ok := IsValid(v)
-			require.True(t, ok, "IsValid(%q) should be true", v)
-		})
-	}
-
-	for _, v := range invalidVersions {
-		t.Run(v, func(t *testing.T) {
-			_, ok := IsValid(v)
-			require.False(t, ok, "IsValid(%q) should be false", v)
-		})
-	}
-}
-
-func TestIsValidWithVPrefix(t *testing.T) {
-	validVersions := []string{
-		"0.0.0",
-		"1.2.3",
-		"v1.2.3",
-		"v10.20.30",
-		"v1.0.0-alpha",
-		"v1.0.0+build",
-	}
-
-	invalidVersions := []string{
 		"",
 		"1",
 		"v1",
@@ -359,13 +303,15 @@ func TestIsValidWithVPrefix(t *testing.T) {
 
 	for _, v := range validVersions {
 		t.Run(v, func(t *testing.T) {
-			require.True(t, IsValidWithVPrefix(v), "IsValidWithVPrefix(%q) should be true", v)
+			_, ok := IsValid(v)
+			require.True(t, ok, "IsValid(%q) should be true", v)
 		})
 	}
 
 	for _, v := range invalidVersions {
 		t.Run(v, func(t *testing.T) {
-			require.False(t, IsValidWithVPrefix(v), "IsValidWithVPrefix(%q) should be false", v)
+			_, ok := IsValid(v)
+			require.False(t, ok, "IsValid(%q) should be false", v)
 		})
 	}
 }

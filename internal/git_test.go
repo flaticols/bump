@@ -70,7 +70,9 @@ func (m *MockCommandRunner) Run(name string, args ...string) ([]byte, error) {
 
 // TestableGitState is a modified version of GitState that accepts a CommandRunner
 type TestableGitState struct {
-	CmdRunner CommandRunner
+	CmdRunner       CommandRunner
+	defaultBranches []string
+	currentBranch   string
 }
 
 // Helper function to run git commands with the CommandRunner
@@ -237,7 +239,10 @@ v1.2`,
 				[]byte(tc.mockOutput), tc.mockError)
 
 			// Create a testable GitState with the mock runner
-			gs := &TestableGitState{CmdRunner: mockRunner}
+			gs := &TestableGitState{
+				CmdRunner:       mockRunner,
+				defaultBranches: []string{"main", "master"},
+			}
 
 			// Call the testable version of getLatestGitTag
 			tag, err := gs.getLatestGitTag()
@@ -275,11 +280,13 @@ func (gs *TestableGitState) IsDefaultBranch() (string, bool, error) {
 
 		branchRef := strings.TrimSpace(string(output))
 		b := strings.TrimPrefix(branchRef, "refs/heads/")
-		return b, slices.Contains(defaultBranches, b), nil
+		gs.currentBranch = b
+		return b, slices.Contains(gs.defaultBranches, b), nil
 	}
 
 	b := strings.TrimSpace(string(output))
-	return b, slices.Contains(defaultBranches, b), nil
+	gs.currentBranch = b
+	return b, slices.Contains(gs.defaultBranches, b), nil
 }
 
 // TestCheckLocalChanges tests the CheckLocalChanges method
@@ -314,7 +321,10 @@ func TestCheckLocalChanges(t *testing.T) {
 			mockRunner.SetOutput("git status --porcelain", []byte(tc.mockOutput), tc.mockError)
 
 			// Create testable GitState with mock runner
-			gs := &TestableGitState{CmdRunner: mockRunner}
+			gs := &TestableGitState{
+				CmdRunner:       mockRunner,
+				defaultBranches: []string{"main", "master"},
+			}
 
 			// Test the method
 			hasChanges, err := gs.CheckLocalChanges()
@@ -357,6 +367,16 @@ func TestIsDefaultBranch(t *testing.T) {
 			expectedResult: false,
 			expectError:    false,
 		},
+		{
+			name:           "Fallback to symbolic-ref",
+			mockOutput:     "",
+			mockError:      exec.ErrNotFound,
+			fallbackOutput: "refs/heads/master",
+			fallbackError:  nil,
+			expectedBranch: "master",
+			expectedResult: true,
+			expectError:    false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -369,9 +389,12 @@ func TestIsDefaultBranch(t *testing.T) {
 			}
 
 			// Create testable GitState
-			gs := &TestableGitState{CmdRunner: mockRunner}
+			gs := &TestableGitState{
+				CmdRunner:       mockRunner,
+				defaultBranches: []string{"main", "master"},
+			}
 
-			// Test the method (we only implement this specific method for TestableGitState)
+			// Test the method
 			branch, isDefault, err := gs.IsDefaultBranch()
 
 			if tc.expectError {
