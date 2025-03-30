@@ -79,20 +79,6 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 		Args:      cobra.OnlyValidArgs,
 		ValidArgs: []string{major, minor, patch},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			if opts.BraveMode {
-				opts.P.Printf("%s brave mode enabled, ignoring warnings and errors\n", opts.P.Symbols.Warning)
-			}
-
-			if opts.Verbose {
-				opts.P.Printf("%s working directory: %s\n", opts.P.Symbols.Bullet, opts.RepoDirectory)
-			}
-
-			err := internal.SetBumpWd(opts.RepoDirectory)
-			if err != nil {
-				opts.P.Println(opts.P.Err(err.Error()))
-				os.Exit(1)
-			}
-
 			gitStateChecks(opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {

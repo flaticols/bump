@@ -6,28 +6,15 @@ import (
 	"unicode"
 )
 
-// Parse parses a version string into a Version object.
-// Returns an error if the version string is not valid SemVer.
-func Parse(version string) (Version, error) {
-	return parse(version, false)
-}
-
-// ParseWithVPrefix parses a version string into a Version object,
-// optionally accepting a 'v' prefix (e.g., v1.2.3).
-// Returns an error if the version string is not valid SemVer.
-func ParseWithVPrefix(version string) (Version, error) {
-	return parse(version, true)
-}
-
 // parse is the internal implementation that handles the actual parsing
 // with an option to allow 'v' prefix
-func parse(version string, allowVPrefix bool) (Version, error) {
+func Parse(version string) (Version, error) {
 	if version == "" {
 		return Version{}, ErrEmptyVersion
 	}
 
 	// Remove 'v' prefix if present and allowed
-	if allowVPrefix && len(version) > 0 && version[0] == 'v' {
+	if len(version) > 0 && version[0] == 'v' {
 		version = version[1:]
 	}
 
@@ -173,20 +160,8 @@ func validateIdentifier(id string, isPrerelease bool) error {
 
 // IsValid returns true if the version string is valid SemVer.
 func IsValid(version string) (Version, bool) {
-	v, err := Parse(version)
-	if err != nil {
-		v, err = ParseWithVPrefix(version)
-		return v, err == nil
-	}
-
+	v, _ := Parse(version)
 	return v, true
-}
-
-// IsValidWithVPrefix returns true if the version string is valid SemVer,
-// optionally accepting a 'v' prefix.
-func IsValidWithVPrefix(version string) bool {
-	_, err := ParseWithVPrefix(version)
-	return err == nil
 }
 
 // New creates a new Version with the given components.
