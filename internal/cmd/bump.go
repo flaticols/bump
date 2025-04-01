@@ -5,8 +5,10 @@ import (
 	"os"
 	"os/exec"
 	"runtime/debug"
+	"slices"
 
-	"github.com/flaticols/bump/internal"
+	"github.com/flaticols/bump/internal/git"
+	G "github.com/flaticols/bump/internal/git"
 	"github.com/flaticols/bump/semver"
 	"github.com/spf13/cobra"
 )
@@ -25,22 +27,6 @@ type (
 	Printf           func(format string, a ...any)
 	Println          func(format string, a ...any)
 )
-
-type GitStater interface {
-	SetLocalOnly(val bool)
-
-	IsDefaultBranch() (bool, error)
-	GetCurrentBranch() string
-	CheckLocalChanges() (bool, error)
-	CheckRemoteChanges() (bool, error)
-	HasUnpushedChanges() (bool, error)
-	HasRemoteUnfetchedTags() (bool, error)
-	GetCurrentVersion() (semver.Version, error)
-	SetGitTag(string) error
-	PushGitTag(string) error
-	RemoveLocalGitTag(string) error
-	RemoveRemoteGitTag(string) error
-}
 
 type Symbols struct {
 	Ok      string
@@ -62,14 +48,39 @@ type TextPrinters struct {
 
 type Options struct {
 	P                  TextPrinters
-	Git                GitStater
+	DefaultBranchs     []string
 	RepoDirectory      string
-	Verbose, LocalRepo bool
+	Verbose, OnlyLocal bool
 	BraveMode          bool
 	NoColor            bool
 	Exit               func()
 }
 
+// CreateRootCmd initializes and returns the root command for the "bump" CLI tool.
+// This command provides functionality to increment semantic versioning tags in Git repositories.
+//
+// Parameters:
+//   - opts: A pointer to an Options struct that contains configuration and dependencies for the command.
+//
+// Returns:
+//   - *cobra.Command: The root command for the "bump" CLI tool.
+//
+// The command supports the following subcommands:
+//   - major: Increments the major version (e.g., v1.2.3 -> v2.0.0).
+//   - minor: Increments the minor version (e.g., v1.2.3 -> v1.3.0).
+//   - patch: Increments the patch version (e.g., v1.2.3 -> v1.2.4).
+//
+// Features:
+//   - Automatically detects the current semantic version tag in the Git repository.
+//   - Handles cases where no tags are present by using a default version (0.0.0).
+//   - Validates semantic versioning tags and provides error messages for invalid tags.
+//   - Creates and optionally pushes the new version tag to the remote repository.
+//
+// Example Usage:
+//   - bump         # Bumps the patch version (e.g., v1.2.3 -> v1.2.4).
+//   - bump major   # Bumps the major version (e.g., v1.2.3 -> v2.0.0).
+//   - bump minor   # Bumps the minor version (e.g., v1.2.3 -> v1.3.0).
+//   - bump patch   # Bumps the patch version (e.g., v1.2.3 -> v1.2.4).
 func CreateRootCmd(opts *Options) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:       "bump [major|minor|patch]",
@@ -82,8 +93,8 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 			gitStateChecks(opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ver, err := opts.Git.GetCurrentVersion()
-			var tagErr internal.SemVerTagError
+			ver, err := git.CmdGetTag()
+			var tagErr G.SemVerTagError
 			var nextVer semver.Version
 			if err != nil {
 				if errors.As(err, &tagErr) {
@@ -93,7 +104,7 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 					}
 
 					opts.P.Printf("%s no tags found, using default version %s\n", opts.P.Symbols.Bullet,
-						opts.P.Version(internal.DefaultVersion))
+						opts.P.Version(G.DefaultVersion))
 					ver, _ = semver.Parse("0.0.0")
 				} else {
 					return err
@@ -109,14 +120,14 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 				opts.P.Printf("%s bump tag %s => %s\n", opts.P.Symbols.Bullet, opts.P.Version(ver.String()), tag)
 			}
 
-			err = opts.Git.SetGitTag(tag)
+			err = git.CmdCreateTag(tag)
 			if err != nil {
 				return err
 			}
 			opts.P.Printf("%s tag %s created\n", opts.P.Symbols.Ok, tag)
 
-			if !opts.LocalRepo {
-				err = opts.Git.PushGitTag(tag)
+			if !opts.OnlyLocal {
+				err = git.CmdPushTag(tag)
 				if err != nil {
 					return err
 				}
@@ -133,6 +144,21 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 	return cmd
 }
 
+// gitStateChecks performs a series of checks on the Git repository state to ensure
+// it is in a valid state for further operations. The checks include:
+//
+// 1. Verifying if the current branch is the default branch.
+// 2. Checking for uncommitted changes in the working directory.
+// 3. Checking for remote changes that need to be pulled.
+// 4. Checking for unpushed changes in the local repository.
+// 5. Checking for unfetched remote tags (if the repository is not local).
+//
+// If any of these checks fail, the function will print an appropriate error or
+// warning message and exit the program unless BraveMode is enabled in the options.
+//
+// Parameters:
+//   - opts (*Options): A pointer to an Options struct containing configuration
+//     and utility methods for performing Git operations and printing messages.
 func gitStateChecks(opts *Options) {
 	exitIfNotBrave := func() {
 		if !opts.BraveMode {
@@ -140,18 +166,20 @@ func gitStateChecks(opts *Options) {
 		}
 	}
 
-	yes, err := opts.Git.IsDefaultBranch()
+	branch, err := git.CmdCurrentBranch()
 	if err != nil {
 		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
 		exitIfNotBrave()
-	} else if !yes {
-		opts.P.Printf("%s not on default branch (%s)\n", opts.P.Symbols.Error, opts.Git.GetCurrentBranch())
+	}
+	ok := slices.Contains(opts.DefaultBranchs, branch)
+	if !ok {
+		opts.P.Printf("%s not on default branch (%s)\n", opts.P.Symbols.Error, branch)
 		exitIfNotBrave()
 	} else {
-		opts.P.Printf("%s on default branch (%s)\n", opts.P.Symbols.Ok, opts.Git.GetCurrentBranch())
+		opts.P.Printf("%s on default branch (%s)\n", opts.P.Symbols.Ok, branch)
 	}
 
-	if yes, err := opts.Git.CheckLocalChanges(); err != nil {
+	if yes, err := git.CmdHasLocalChanges(); err != nil {
 		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
 		exitIfNotBrave()
 	} else if yes {
@@ -161,29 +189,28 @@ func gitStateChecks(opts *Options) {
 		opts.P.Printf("%s no uncommitted changes\n", opts.P.Symbols.Ok)
 	}
 
-	if yes, err := opts.Git.CheckRemoteChanges(); err != nil {
-		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
-		exitIfNotBrave()
-	} else if yes {
-		opts.P.Printf("%s remote changes, pull first\n", opts.P.Symbols.Error)
-		exitIfNotBrave()
-	} else {
-		opts.P.Printf("%s no remote changes\n", opts.P.Symbols.Ok)
-	}
+	if !opts.OnlyLocal {
+		if yes, err := git.CmdHasRemoteChanges(); err != nil {
+			opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
+			exitIfNotBrave()
+		} else if yes {
+			opts.P.Printf("%s remote changes, pull first\n", opts.P.Symbols.Error)
+			exitIfNotBrave()
+		} else {
+			opts.P.Printf("%s no remote changes\n", opts.P.Symbols.Ok)
+		}
 
-	if yes, err := opts.Git.HasUnpushedChanges(); err != nil {
-		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
-		exitIfNotBrave()
-	} else if yes {
-		opts.P.Printf("%s unpushed changes\n", opts.P.Symbols.Error)
-		exitIfNotBrave()
-	} else {
-		opts.P.Printf("%s no unpushed changes\n", opts.P.Symbols.Ok)
-	}
+		if yes, err := git.CmdHasUnpushedChanges(branch); err != nil {
+			opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
+			exitIfNotBrave()
+		} else if yes {
+			opts.P.Printf("%s unpushed changes\n", opts.P.Symbols.Error)
+			exitIfNotBrave()
+		} else {
+			opts.P.Printf("%s no unpushed changes\n", opts.P.Symbols.Ok)
+		}
 
-	// Check for unfetched remote tags
-	if !opts.LocalRepo {
-		if yes, err := opts.Git.HasRemoteUnfetchedTags(); err != nil {
+		if yes, err := git.CmdHasRemoteUnfetchedTags(); err != nil {
 			opts.P.Printf("%s %s\n", opts.P.Symbols.Warning, err.Error())
 		} else if yes {
 			opts.P.Printf("%s remote has new tags, fetching tags first\n", opts.P.Symbols.Warning)
@@ -205,6 +232,9 @@ func handleVersionCommand() string {
 	return info.Main.Version
 }
 
+// getIncPart returns the semantic version part to increment based on the provided arguments.
+// If the input slice contains at least one element, the first element is returned as the part to increment.
+// Otherwise, it defaults to returning the patch part.
 func getIncPart(args []string) semVerPart {
 	if len(args) > 0 {
 		return args[0]
@@ -212,6 +242,10 @@ func getIncPart(args []string) semVerPart {
 	return patch
 }
 
+// createNewVersion returns a new semantic version by incrementing the specified part of the provided version.
+// The incPart parameter determines which part of the version to increment: major for a major update,
+// minor for a minor update, and patch (or any unrecognized value, due to fallthrough) for a patch update.
+// It returns the updated semver.Version after performing the corresponding increment operation.
 func createNewVersion(incPart semVerPart, ver semver.Version) semver.Version {
 	switch incPart {
 	case major:
