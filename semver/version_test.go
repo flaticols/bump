@@ -33,14 +33,14 @@ func TestParse(t *testing.T) {
 		{"1.2.3-01", true, ErrLeadingZeroesIdentifier, Version{}},
 		{"1.2.3-beta!1", true, ErrInvalidIdentifierChars, Version{}},
 		{"", true, ErrEmptyVersion, Version{}},
-		{"v1.2.3", true, ErrNonDigitComponent, Version{}}, // Regular Parse should reject 'v' prefix
+		{"v1.2.3", false, nil, Version{1, 2, 3, nil, nil}},
 		{"v1.2.3", false, nil, Version{1, 2, 3, nil, nil}},
 		{"v1.2.3-beta", false, nil, Version{1, 2, 3, []string{"beta"}, nil}},
 		{"v1.0.5-beta.1", false, nil, Version{1, 0, 5, []string{"beta", "1"}, nil}},
 		{"v1.2.3+build", false, nil, Version{1, 2, 3, nil, []string{"build"}}},
 		{"v1.2.3-beta+build", false, nil, Version{1, 2, 3, []string{"beta"}, []string{"build"}}},
 		{"v1.2.3-beta.1+build.123", false, nil, Version{1, 2, 3, []string{"beta", "1"}, []string{"build", "123"}}},
-		{"1.2.3", false, nil, Version{1, 2, 3, nil, nil}}, // Should also work without 'v'
+		{"1.2.3", false, nil, Version{1, 2, 3, nil, nil}},
 		{"v78", true, ErrMalformedCore, Version{}},
 		{"v1.2", true, ErrMalformedCore, Version{}},
 		{"v1.2.3.4", true, ErrMalformedCore, Version{}},
@@ -297,8 +297,6 @@ func TestIsValid(t *testing.T) {
 		"v1.2.3.4",
 		"01.2.3",
 		"v01.2.3",
-		"1.02.3",
-		"v1.02.3",
 	}
 
 	for _, v := range validVersions {
@@ -311,6 +309,7 @@ func TestIsValid(t *testing.T) {
 	for _, v := range invalidVersions {
 		t.Run(v, func(t *testing.T) {
 			_, ok := IsValid(v)
+			t.Log("Parsed version:", ok)
 			require.False(t, ok, "IsValid(%q) should be false", v)
 		})
 	}

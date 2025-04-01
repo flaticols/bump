@@ -160,8 +160,8 @@ func validateIdentifier(id string, isPrerelease bool) error {
 
 // IsValid returns true if the version string is valid SemVer.
 func IsValid(version string) (Version, bool) {
-	v, _ := Parse(version)
-	return v, true
+	v, err := Parse(version)
+	return v, err == nil
 }
 
 // New creates a new Version with the given components.
