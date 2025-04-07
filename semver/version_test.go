@@ -8,10 +8,10 @@ import (
 )
 
 type parseTestsInput struct {
-	input       string
-	wantErr     bool
 	expectedErr error
+	input       string
 	expected    Version
+	wantErr     bool
 }
 
 func TestParse(t *testing.T) {

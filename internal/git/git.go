@@ -13,9 +13,9 @@ const DefaultVersion = "0.0.1"
 
 type (
 	SemVerTagError struct {
-		NoTags bool
 		Tag    string
 		Msg    string
+		NoTags bool
 	}
 )
 

@@ -7,11 +7,11 @@ import (
 
 // Version represents a semantic version.
 type Version struct {
+	Prerelease []string
+	Metadata   []string
 	Major      int
 	Minor      int
 	Patch      int
-	Prerelease []string
-	Metadata   []string
 }
 
 // String returns the string representation of the Version.

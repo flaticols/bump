@@ -47,13 +47,14 @@ type TextPrinters struct {
 }
 
 type Options struct {
-	P                  TextPrinters
-	DefaultBranchs     []string
-	RepoDirectory      string
-	Verbose, OnlyLocal bool
-	BraveMode          bool
-	NoColor            bool
-	Exit               func()
+	Exit           func()
+	P              TextPrinters
+	RepoDirectory  string
+	DefaultBranchs []string
+	Verbose        bool
+	OnlyLocal      bool
+	BraveMode      bool
+	NoColor        bool
 }
 
 // CreateRootCmd initializes and returns the root command for the "bump" CLI tool.

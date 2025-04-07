@@ -25,8 +25,8 @@ func (r *RealCommandRunner) Run(name string, args ...string) ([]byte, error) {
 // MockCommandRunner is a mock implementation for testing
 type MockCommandRunner struct {
 	OutputMap map[string]struct {
-		Output []byte
 		Err    error
+		Output []byte
 	}
 }
 
@@ -34,8 +34,8 @@ type MockCommandRunner struct {
 func NewMockCommandRunner() *MockCommandRunner {
 	return &MockCommandRunner{
 		OutputMap: make(map[string]struct {
-			Output []byte
 			Err    error
+			Output []byte
 		}),
 	}
 }
@@ -43,8 +43,8 @@ func NewMockCommandRunner() *MockCommandRunner {
 // SetOutput sets the output for a given command
 func (m *MockCommandRunner) SetOutput(cmdString string, output []byte, err error) {
 	m.OutputMap[cmdString] = struct {
-		Output []byte
 		Err    error
+		Output []byte
 	}{Output: output, Err: err}
 }
 
@@ -71,8 +71,8 @@ func (m *MockCommandRunner) Run(name string, args ...string) ([]byte, error) {
 // TestableGitState is a modified version of GitState that accepts a CommandRunner
 type TestableGitState struct {
 	CmdRunner       CommandRunner
-	defaultBranches []string
 	currentBranch   string
+	defaultBranches []string
 }
 
 // Helper function to run git commands with the CommandRunner
@@ -292,9 +292,9 @@ func (gs *TestableGitState) IsDefaultBranch() (string, bool, error) {
 // TestCheckLocalChanges tests the CheckLocalChanges method
 func TestCheckLocalChanges(t *testing.T) {
 	testCases := []struct {
+		mockError      error
 		name           string
 		mockOutput     string
-		mockError      error
 		expectedResult bool
 		expectError    bool
 	}{
