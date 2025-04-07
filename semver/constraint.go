@@ -32,10 +32,9 @@ const (
 
 // Constraint represents a version constraint.
 type Constraint struct {
-	Operator Operator
-	Version  Version
-	// Store the original version string before expansion to detect partial versions
+	Operator        Operator
 	originalVersion string
+	Version         Version
 }
 
 // ConstraintSet represents a set of constraints.

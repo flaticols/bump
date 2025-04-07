@@ -5,12 +5,12 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta
             name="theme-color"
-            content="#2b2114"
+            content="#f5f0e8"
             media="(prefers-color-scheme: light)"
         />
         <meta
             name="theme-color"
-            content="#0f0d0a"
+            content="#1e1e1e"
             media="(prefers-color-scheme: dark)"
         />
 
@@ -44,22 +44,16 @@
                         class="logo-image"
                     />
                 </div>
-                <p class="tagline">
-                    Simple semantic versioning for Git repositories
-                </p>
+                <nav class="nav-container">
+                    <a href="#install">Installation</a>
+                    <a href="#usage">Usage</a>
+                    <a href="#features">Features</a>
+                    <a href="#examples">Examples</a>
+                    <a href="#changelog">Changelog</a>
+                    <a href="https://github.com/flaticols/bump">GitHub</a>
+                </nav>
             </div>
         </header>
-
-        <nav>
-            <div class="container nav-container">
-                <a href="#install">Installation</a>
-                <a href="#usage">Usage</a>
-                <a href="#features">Features</a>
-                <a href="#examples">Examples</a>
-                <a href="#changelog">Changelog</a>
-                <a href="https://github.com/flaticols/bump">GitHub</a>
-            </div>
-        </nav>
 
         <main class="container">
             <section id="about">
@@ -82,38 +76,15 @@
                         <div class="terminal-title">terminal</div>
                     </div>
                     <div class="terminal-body">
-                        <p><span class="terminal-prompt">$ </span>bump</p>
-                        <p>
-                            <span class="cmd-success">•</span> on default
-                            branch: main
-                        </p>
-                        <p>
-                            <span class="cmd-success">•</span> no uncommitted
-                            changes
-                        </p>
-                        <p>
-                            <span class="cmd-success">•</span> no remote changes
-                        </p>
-                        <p>
-                            <span class="cmd-success">•</span> no unpushed
-                            changes
-                        </p>
-                        <p>
-                            <span class="cmd-success">•</span> no new remote
-                            tags
-                        </p>
-                        <p>
-                            <span class="cmd-bullet">•</span> bump tag
-                            <span class="version-old">v1.2.3</span> =>
-                            <span class="version-new">v1.2.4</span>
-                        </p>
-                        <p>
-                            <span class="cmd-success">•</span> tag v1.2.4
-                            created
-                        </p>
-                        <p>
-                            <span class="cmd-success">•</span> tag v1.2.4 pushed
-                        </p>
+                        <pre><code><span class="terminal-prompt">$ </span>bump
+<span class="cmd-success">•</span> on default branch: main
+<span class="cmd-success">•</span> no uncommitted changes
+<span class="cmd-success">•</span> no remote changes
+<span class="cmd-success">•</span> no unpushed changes
+<span class="cmd-success">•</span> no new remote tags
+<span class="cmd-bullet">•</span> bump tag <span class="version-old">v1.2.3</span> => <span class="version-new">v1.2.4</span>
+<span class="cmd-success">•</span> tag v1.2.4 created
+<span class="cmd-success">•</span> tag v1.2.4 pushed</code></pre>
                     </div>
                 </div>
             </section>
@@ -402,21 +373,16 @@ Are you sure? [Y/n] Y
                     </summary>
 
                     <div class="changelog-content">
-                        <h4>Added</h4>
-                        <ul>
-                            <li>
-                                <span class="changelog-badge badge-added">Added</span>
-                                Implementation of full semver spec v2.
-                            </li>
-                        </ul>
-
-                        <h4>Fixed</h4>
-                        <ul>
-                            <li>
-                                <span class="changelog-badge badge-fixed">Fixed</span>
-                                Improvement of latest semver teg detection (thanks to <a href="https://github.com/emicklei">@emicklei</a>)
-                            </li>
-                        </ul>
+                        <table class="changelog-table">
+                            <tr>
+                                <th class="type-column badge-added">Added</th>
+                                <td>Implementation of full semver spec v2.</td>
+                            </tr>
+                            <tr>
+                                <th class="type-column badge-fixed">Fixed</th>
+                                <td>Improvement of latest semver teg detection (thanks to <a href="https://github.com/emicklei">@emicklei</a>)</td>
+                            </tr>
+                        </table>
                     </div>
                 </details>
 
@@ -425,59 +391,29 @@ Are you sure? [Y/n] Y
                         v0.0.6 <span class="version-date">March 27, 2025</span>
                     </summary>
                     <div class="changelog-content">
-                        <h4>Added</h4>
-                        <ul>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                Improved help documentation with examples and
-                                better descriptions
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                Version increment arguments (<code>major</code>,
-                                <code>minor</code>, <code>patch</code>) now
-                                visible in help text
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                Added CHANGELOG.md to track version history
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                Added Changelog section to documentation website
-                            </li>
-                        </ul>
-                        <h4>Changed</h4>
-                        <ul>
-                            <li>
-                                <span class="changelog-badge badge-changed"
-                                    >Changed</span
-                                >
-                                Better command usage descriptions in help text
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-changed"
-                                    >Changed</span
-                                >
-                                Example commands now more clearly show their
-                                purpose
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-changed"
-                                    >Changed</span
-                                >
-                                Updated undo command documentation with usage
-                                examples
-                            </li>
-                        </ul>
+                        <table class="changelog-table">
+                            <tr>
+                                <th class="type-column badge-added">Added</th>
+                                <td>
+                                    <ul>
+                                        <li>Improved help documentation with examples and better descriptions</li>
+                                        <li>Version increment arguments (<code>major</code>, <code>minor</code>, <code>patch</code>) now visible in help text</li>
+                                        <li>Added CHANGELOG.md to track version history</li>
+                                        <li>Added Changelog section to documentation website</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="type-column badge-changed">Changed</th>
+                                <td>
+                                    <ul>
+                                        <li>Better command usage descriptions in help text</li>
+                                        <li>Example commands now more clearly show their purpose</li>
+                                        <li>Updated undo command documentation with usage examples</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
                 </details>
 
@@ -486,84 +422,39 @@ Are you sure? [Y/n] Y
                         v0.0.5 <span class="version-date">March 20, 2025</span>
                     </summary>
                     <div class="changelog-content">
-                        <h4>Added</h4>
-                        <ul>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                New
-                                <code>HasRemoteUnfetchedTags()</code> function
-                                to detect and fetch new tags from remote
-                                repositories
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                Automatic tag fetching from remote before
-                                performing operations
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                "Brave mode" flag (<code>--brave</code>,
-                                <code>-b</code>) to bypass warnings and continue
-                                operations
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                Improved error handling with consistent exit
-                                behavior
-                            </li>
-                        </ul>
-                        <h4>Changed</h4>
-                        <ul>
-                            <li>
-                                <span class="changelog-badge badge-changed"
-                                    >Changed</span
-                                >
-                                Updated output format to use bullet points (•)
-                                instead of symbols (✓, ⚠, ✗)
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-changed"
-                                    >Changed</span
-                                >
-                                Revised documentation with new output examples
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-changed"
-                                    >Changed</span
-                                >
-                                Updated README and HTML documentation to reflect
-                                the new features and output format
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-changed"
-                                    >Changed</span
-                                >
-                                Improved messaging for tag operations
-                            </li>
-                        </ul>
-                        <h4>Fixed</h4>
-                        <ul>
-                            <li>
-                                <span class="changelog-badge badge-fixed"
-                                    >Fixed</span
-                                >
-                                Better handling of repositories without remotes
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-fixed"
-                                    >Fixed</span
-                                >
-                                Consistent error messaging
-                            </li>
-                        </ul>
+                        <table class="changelog-table">
+                            <tr>
+                                <th class="type-column badge-added">Added</th>
+                                <td>
+                                    <ul>
+                                        <li>New <code>HasRemoteUnfetchedTags()</code> function to detect and fetch new tags from remote repositories</li>
+                                        <li>Automatic tag fetching from remote before performing operations</li>
+                                        <li>"Brave mode" flag (<code>--brave</code>, <code>-b</code>) to bypass warnings and continue operations</li>
+                                        <li>Improved error handling with consistent exit behavior</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="type-column badge-changed">Changed</th>
+                                <td>
+                                    <ul>
+                                        <li>Updated output format to use bullet points (•) instead of symbols (✓, ⚠, ✗)</li>
+                                        <li>Revised documentation with new output examples</li>
+                                        <li>Updated README and HTML documentation to reflect the new features and output format</li>
+                                        <li>Improved messaging for tag operations</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="type-column badge-fixed">Fixed</th>
+                                <td>
+                                    <ul>
+                                        <li>Better handling of repositories without remotes</li>
+                                        <li>Consistent error messaging</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
                 </details>
 
@@ -572,48 +463,21 @@ Are you sure? [Y/n] Y
                         v0.0.4 <span class="version-date">March 15, 2025</span>
                     </summary>
                     <div class="changelog-content">
-                        <h4>Added</h4>
-                        <ul>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                Initial public release
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                Basic semantic versioning command-line
-                                functionality
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                Support for major, minor, and patch version
-                                bumping
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                Tag creation and pushing to remote repositories
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                Undo command for removing the latest tag
-                            </li>
-                            <li>
-                                <span class="changelog-badge badge-added"
-                                    >Added</span
-                                >
-                                Validation for repository state before
-                                operations
-                            </li>
-                        </ul>
+                        <table class="changelog-table">
+                            <tr>
+                                <th class="type-column badge-added">Added</th>
+                                <td>
+                                    <ul>
+                                        <li>Initial public release</li>
+                                        <li>Basic semantic versioning command-line functionality</li>
+                                        <li>Support for major, minor, and patch version bumping</li>
+                                        <li>Tag creation and pushing to remote repositories</li>
+                                        <li>Undo command for removing the latest tag</li>
+                                        <li>Validation for repository state before operations</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
                 </details>
             </section>
@@ -639,5 +503,27 @@ Are you sure? [Y/n] Y
                 </div>
             </div>
         </footer>
+
+        <script>
+            // JavaScript to handle header shrinking on scroll
+            document.addEventListener('DOMContentLoaded', function() {
+                const header = document.querySelector('header');
+                const scrollThreshold = 50; // Pixels to scroll before shrinking header
+
+                function handleScroll() {
+                    if (window.scrollY > scrollThreshold) {
+                        header.classList.add('header-scrolled');
+                    } else {
+                        header.classList.remove('header-scrolled');
+                    }
+                }
+
+                // Add scroll event listener
+                window.addEventListener('scroll', handleScroll);
+
+                // Initial check in case page is loaded scrolled down
+                handleScroll();
+            });
+        </script>
     </body>
 </html>
