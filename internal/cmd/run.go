@@ -37,7 +37,11 @@ func Run() {
 	pf.BoolVarP(&opts.OnlyLocal, "local", "l", false, "if local is set, bump will not error if no remotes are found")
 	pf.BoolVarP(&opts.BraveMode, "brave", "b", false, "if brave is set, bump will not ask any questions (default: false)")
 	pf.BoolVar(&opts.NoColor, "no-color", false, "disable colorful output (default: false)")
-	rootCmd.ParseFlags(os.Args[1:])
+	err := rootCmd.ParseFlags(os.Args[1:])
+	if err != nil {
+		opts.P.Println(opts.P.Err(err.Error()))
+		os.Exit(1)
+	}
 
 	opts.Exit = func() {
 		if !opts.BraveMode {
@@ -60,7 +64,7 @@ func Run() {
 		opts.P.Printf("%s working directory: %s\n", opts.P.Symbols.Bullet, opts.RepoDirectory)
 	}
 
-	err := internal.SetBumpWd(opts.RepoDirectory)
+	err = internal.SetBumpWd(opts.RepoDirectory)
 	if err != nil {
 		opts.P.Println(opts.P.Err(err.Error()))
 		os.Exit(1)

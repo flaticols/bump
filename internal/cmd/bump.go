@@ -55,6 +55,7 @@ type Options struct {
 	OnlyLocal      bool
 	BraveMode      bool
 	NoColor        bool
+	JSONOutput     bool
 }
 
 // CreateRootCmd initializes and returns the root command for the "bump" CLI tool.
