@@ -217,7 +217,7 @@ func CmdGetTag() (semver.Version, error) {
 	lines := strings.Split(trimmedOutput, "\n")
 
 	// Group tags by creation timestamp. Since the output is sorted descending by creatordate,
-	// the first group (latestTimestamp) is the most recent one.
+	// the first group (latestTimestamp) is the most recent one.GitTag
 	var latestTimestamp string
 	var tagsAtLatest []string
 	for _, line := range lines {
