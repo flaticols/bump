@@ -16,6 +16,7 @@ type parseTestsInput struct {
 
 func TestParse(t *testing.T) {
 	tests := []parseTestsInput{
+		{nil, "1.2.3", Version{nil, nil, 1, 2, 3}, false},
 		{nil, "1.2.3", Version{
 			Prerelease: nil,
 			Metadata:   nil,
