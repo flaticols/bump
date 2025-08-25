@@ -196,7 +196,7 @@ func CmdHasRemoteUnfetchedTags() (bool, error) {
 // Returns the tag as a semver.Version and an error if unsuccessful.
 // CmdGetTag retrieves the latest Git tag from the current repository by grouping tags by creation timestamp.
 // It returns the highest semver tag from the most recent group of tags that share the same creation timestamp.
-func CmdGetTag() (semver.Version, error) {
+func CmdGetTag(prefix string) (semver.Version, error) {
 	cmd := exec.Command("git", "for-each-ref", "--sort=-creatordate", "--format=%(refname:short) %(creatordate:iso-strict)", "refs/tags")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -216,43 +216,63 @@ func CmdGetTag() (semver.Version, error) {
 
 	lines := strings.Split(trimmedOutput, "\n")
 
-	// Group tags by creation timestamp. Since the output is sorted descending by creatordate,
-	// the first group (latestTimestamp) is the most recent one.GitTag
-	var latestTimestamp string
-	var tagsAtLatest []string
+	// Iterate over groups of same timestamp, return first group that has a valid tag for the given prefix
+	var currentTimestamp string
+	var groupTags []string
+	flushGroup := func() (semver.Version, bool) {
+		var validVersions []semver.Version
+		for _, tag := range groupTags {
+			candidate := tag
+			if prefix != "" {
+				if !strings.HasPrefix(candidate, prefix) {
+					continue
+				}
+				candidate = strings.TrimPrefix(candidate, prefix)
+			}
+			if ver, ok := semver.IsValid(candidate); ok {
+				validVersions = append(validVersions, ver)
+			}
+		}
+		if len(validVersions) == 0 {
+			return semver.Version{}, false
+		}
+		sort.Slice(validVersions, func(i, j int) bool {
+			return semver.Compare(validVersions[i], validVersions[j]) > 0
+		})
+		return validVersions[0], true
+	}
+
 	for _, line := range lines {
-		// Expecting format: "<tag> <timestamp>"
 		parts := strings.SplitN(line, " ", 2)
 		if len(parts) != 2 {
 			continue
 		}
 		tag := parts[0]
 		timestamp := parts[1]
-		if latestTimestamp == "" {
-			latestTimestamp = timestamp
-			tagsAtLatest = append(tagsAtLatest, tag)
-		} else if timestamp == latestTimestamp {
-			tagsAtLatest = append(tagsAtLatest, tag)
-		} else {
-			// Since sorted descending, we break when timestamp changes
-			break
+		if currentTimestamp == "" {
+			currentTimestamp = timestamp
+			groupTags = []string{tag}
+			continue
 		}
+		if timestamp == currentTimestamp {
+			groupTags = append(groupTags, tag)
+			continue
+		}
+		// new timestamp encountered: process previous group
+		if ver, ok := flushGroup(); ok {
+			return ver, nil
+		}
+		// reset for new group
+		currentTimestamp = timestamp
+		groupTags = []string{tag}
+	}
+	// process last group
+	if ver, ok := flushGroup(); ok {
+		return ver, nil
 	}
 
-	var validVersions []semver.Version
-	for _, tag := range tagsAtLatest {
-		if ver, ok := semver.IsValid(tag); ok {
-			validVersions = append(validVersions, ver)
-		}
-	}
-	if len(validVersions) == 0 {
-		return semver.Version{}, SemVerTagError{Msg: "no valid semver tags found in the latest timestamp group"}
-	}
-	sort.Slice(validVersions, func(i, j int) bool {
-		return semver.Compare(validVersions[i], validVersions[j]) > 0
-	})
-
-	return validVersions[0], nil
+	// No tags found for the given prefix
+	return semver.Version{}, SemVerTagError{NoTags: true, Msg: "no tags found for the given prefix"}
 }
 
 // CmdCreateTag creates a new Git tag with the specified name
