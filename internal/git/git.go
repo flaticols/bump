@@ -171,7 +171,7 @@ func CmdHasRemoteUnfetchedTags() (bool, error) {
 		return false, fmt.Errorf("failed to list remote tags: %w", err)
 	}
 
-	for line := range strings.SplitSeq(strings.TrimSpace(string(lsRemoteOutput)), "\n") {
+	for _, line := range strings.Split(strings.TrimSpace(string(lsRemoteOutput)), "\n") {
 		if line == "" {
 			continue
 		}

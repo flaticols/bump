@@ -62,7 +62,7 @@ func Run() {
 		opts.P.Printf("%s working directory: %s\n", opts.P.Symbols.Bullet, opts.RepoDirectory)
 	}
 
- err := internal.SetBumpWd(opts.RepoDirectory)
+	err := internal.SetBumpWd(opts.RepoDirectory)
 	if err != nil {
 		if opts.JSON {
 			if opts.Result.Checks == nil {
