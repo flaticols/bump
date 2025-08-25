@@ -55,6 +55,7 @@ type Options struct {
 	OnlyLocal      bool
 	BraveMode      bool
 	NoColor        bool
+	Prefix         string
 }
 
 // CreateRootCmd initializes and returns the root command for the "bump" CLI tool.
@@ -94,7 +95,7 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 			gitStateChecks(opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ver, err := git.CmdGetTag()
+   ver, err := git.CmdGetTag(opts.Prefix)
 			var tagErr G.SemVerTagError
 			var nextVer semver.Version
 			if err != nil {
@@ -112,13 +113,13 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 				}
 			}
 
-			nextVer = createNewVersion(getIncPart(args), ver)
-			tag := opts.P.Version(nextVer.String())
+   nextVer = createNewVersion(getIncPart(args), ver)
+			tag := buildTag(opts, nextVer)
 
 			if err != nil && tagErr.NoTags {
 				opts.P.Printf("%s set tag %s\n", opts.P.Symbols.Ok, tag)
 			} else {
-				opts.P.Printf("%s bump tag %s => %s\n", opts.P.Symbols.Bullet, opts.P.Version(ver.String()), tag)
+    opts.P.Printf("%s bump tag %s => %s\n", opts.P.Symbols.Bullet, buildTag(opts, ver), tag)
 			}
 
 			err = git.CmdCreateTag(tag)
@@ -258,4 +259,11 @@ func createNewVersion(incPart semVerPart, ver semver.Version) semver.Version {
 	default:
 		return ver.IncrementPatch()
 	}
+}
+
+
+// buildTag constructs the full tag string using the provided options and version.
+// It prepends the optional prefix (if any) to the human-readable version string (which includes the 'v').
+func buildTag(opts *Options, ver semver.Version) string {
+	return opts.Prefix + opts.P.Version(ver.String())
 }

@@ -196,7 +196,9 @@ func CmdHasRemoteUnfetchedTags() (bool, error) {
 // Returns the tag as a semver.Version and an error if unsuccessful.
 // CmdGetTag retrieves the latest Git tag from the current repository by grouping tags by creation timestamp.
 // It returns the highest semver tag from the most recent group of tags that share the same creation timestamp.
-func CmdGetTag() (semver.Version, error) {
+// If a non-empty prefix is provided, only tags that start with the given prefix are considered,
+// and the prefix is stripped before SemVer validation.
+func CmdGetTag(prefix string) (semver.Version, error) {
 	cmd := exec.Command("git", "for-each-ref", "--sort=-creatordate", "--format=%(refname:short) %(creatordate:iso-strict)", "refs/tags")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -216,32 +218,47 @@ func CmdGetTag() (semver.Version, error) {
 
 	lines := strings.Split(trimmedOutput, "\n")
 
-	// Group tags by creation timestamp. Since the output is sorted descending by creatordate,
-	// the first group (latestTimestamp) is the most recent one.GitTag
+	// Group tags by creation timestamp, but consider only tags with the given prefix (if any).
+	// Since the output is sorted descending by creatordate, we find the first matching tag,
+	// remember its timestamp and collect other matching tags from the same timestamp group only.
 	var latestTimestamp string
 	var tagsAtLatest []string
 	for _, line := range lines {
-		// Expecting format: "<tag> <timestamp>"
 		parts := strings.SplitN(line, " ", 2)
 		if len(parts) != 2 {
 			continue
 		}
-		tag := parts[0]
+		rawTag := parts[0]
 		timestamp := parts[1]
+
+		if prefix != "" && !strings.HasPrefix(rawTag, prefix) {
+			continue
+		}
+
 		if latestTimestamp == "" {
 			latestTimestamp = timestamp
-			tagsAtLatest = append(tagsAtLatest, tag)
-		} else if timestamp == latestTimestamp {
-			tagsAtLatest = append(tagsAtLatest, tag)
+			tagsAtLatest = append(tagsAtLatest, rawTag)
+			continue
+		}
+		if timestamp == latestTimestamp {
+			tagsAtLatest = append(tagsAtLatest, rawTag)
 		} else {
-			// Since sorted descending, we break when timestamp changes
 			break
 		}
 	}
 
+	// If we didn't collect any tags (no matches for prefix), return NoTags
+	if len(tagsAtLatest) == 0 {
+		return semver.Version{}, SemVerTagError{NoTags: true}
+	}
+
 	var validVersions []semver.Version
-	for _, tag := range tagsAtLatest {
-		if ver, ok := semver.IsValid(tag); ok {
+	for _, t := range tagsAtLatest {
+		clean := t
+		if prefix != "" {
+			clean = strings.TrimPrefix(t, prefix)
+		}
+		if ver, ok := semver.IsValid(clean); ok {
 			validVersions = append(validVersions, ver)
 		}
 	}

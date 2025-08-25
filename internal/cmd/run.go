@@ -36,8 +36,9 @@ func Run() {
 	pf.BoolVar(&opts.Verbose, "verbose", false, "enable verbose output")
 	pf.BoolVarP(&opts.OnlyLocal, "local", "l", false, "if local is set, bump will not error if no remotes are found")
 	pf.BoolVarP(&opts.BraveMode, "brave", "b", false, "if brave is set, bump will not ask any questions (default: false)")
-	pf.BoolVar(&opts.NoColor, "no-color", false, "disable colorful output (default: false)")
-	rootCmd.ParseFlags(os.Args[1:])
+ pf.BoolVar(&opts.NoColor, "no-color", false, "disable colorful output (default: false)")
+ pf.StringVar(&opts.Prefix, "prefix", "", "tag prefix to use (e.g., 'pkg/x')")
+ rootCmd.ParseFlags(os.Args[1:])
 
 	opts.Exit = func() {
 		if !opts.BraveMode {
