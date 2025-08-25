@@ -40,7 +40,13 @@ func Run() {
 	pf.BoolVar(&opts.NoColor, "no-color", false, "disable colorful output (default: false)")
 	pf.BoolVar(&opts.JSON, "json", false, "output a single JSON object to stdout")
 	pf.StringVar(&opts.Prefix, "prefix", "", "tag prefix to use (e.g., 'pkg/x')")
+	pf.BoolVar(&opts.NoVPrefix, "no-v-prefix", false, "do not add 'v' prefix to tags (global)")
 	rootCmd.ParseFlags(os.Args[1:])
+
+	// configure version printer according to global flag
+	if opts.NoVPrefix {
+		opts.P.Version = func(ver string) string { return ver }
+	}
 
 	opts.Exit = func() {
 		if !opts.BraveMode {
@@ -51,7 +57,9 @@ func Run() {
 	}
 
 	undoCmd := CreateUndoCmd(opts)
+	tagCmd := CreateTagCmd(opts)
 	rootCmd.AddCommand(undoCmd)
+	rootCmd.AddCommand(tagCmd)
 
 	color.NoColor = opts.NoColor
 

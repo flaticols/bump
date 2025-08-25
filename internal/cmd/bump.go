@@ -68,6 +68,7 @@ type Options struct {
 	NoColor        bool
 	JSON           bool
 	Prefix         string
+	NoVPrefix      bool
 	Result         JSONResult
 }
 
@@ -98,13 +99,16 @@ type Options struct {
 //   - bump patch   # Bumps the patch version (e.g., v1.2.3 -> v1.2.4).
 func CreateRootCmd(opts *Options) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:       "bump [major|minor|patch]",
+		Use:       "bump [major|minor|patch|version]",
 		Short:     "A command-line tool to easily bump the git tag version of your project using semantic versioning",
 		Long:      `Bump is a lightweight command-line tool that helps you manage semantic versioning tags in Git repositories. It automates version increments following SemVer standards, making it easy to maintain proper versioning in your projects.`,
-		Example:   "  bump         # Bumps patch version (e.g., v1.2.3 -> v1.2.4)\n  bump major   # Bumps major version (e.g., v1.2.3 -> v2.0.0)\n  bump minor   # Bumps minor version (e.g., v1.2.3 -> v1.3.0)\n  bump patch   # Bumps patch version (e.g., v1.2.3 -> v1.2.4)",
-		Args:      cobra.OnlyValidArgs,
-		ValidArgs: []string{major, minor, patch},
+		Example:   "  bump                 # Bumps patch version (e.g., v1.2.3 -> v1.2.4)\n  bump 2.3.4          # Creates tag v2.3.4 (or 2.3.4 with --no-v-prefix)\n  bump major          # Bumps major version (e.g., v1.2.3 -> v2.0.0)\n  bump minor          # Bumps minor version (e.g., v1.2.3 -> v1.3.0)\n  bump patch          # Bumps patch version (e.g., v1.2.3 -> v1.2.4)",
+		Args:      cobra.MaximumNArgs(1),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// ensure version printer respects global flag even when flags placed after subcommands
+			if opts.NoVPrefix {
+				opts.P.Version = func(ver string) string { return ver }
+			}
 			return gitStateChecks(opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -136,7 +140,17 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 				opts.Result.Tag.Current = ""
 			}
 
-			nextVer = createNewVersion(getIncPart(args), ver)
+			// Determine next version: explicit version arg or increment
+			if len(args) == 1 && args[0] != string(major) && args[0] != string(minor) && args[0] != string(patch) {
+				parsed, perr := semver.Parse(args[0])
+				if perr != nil {
+					return fmt.Errorf("invalid version: %v", perr)
+				}
+				nextVer = parsed
+			} else {
+				nextVer = createNewVersion(getIncPart(args), ver)
+			}
+
 			newTag := opts.P.Version(nextVer.String())
 			if opts.Prefix != "" {
 				newTag = opts.Prefix + newTag
@@ -145,6 +159,8 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 
 			if err != nil && tagErr.NoTags {
 				opts.P.Printf("%s set tag %s\n", opts.P.Symbols.Ok, newTag)
+			} else if len(args) == 1 && args[0] != string(major) && args[0] != string(minor) && args[0] != string(patch) {
+				opts.P.Printf("%s set tag %s (explicit)\n", opts.P.Symbols.Bullet, newTag)
 			} else {
 				prev := opts.P.Version(ver.String())
 				if opts.Prefix != "" {
