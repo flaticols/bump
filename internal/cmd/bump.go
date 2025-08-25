@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"runtime/debug"
 	"slices"
