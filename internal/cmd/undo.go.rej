@@ -1,0 +1,21 @@
+--- internal/cmd/undo.go	(revision Before)
++++ internal/cmd/undo.go	(revision After)
+@@ -70,4 +70,18 @@
+ 				}
+ 				opts.P.Printf("%s local tag removed\n", opts.P.Symbols.Ok)
+ 				if !opts.OnlyLocal {
+-					if err := git.CmdRemoveRemoteTag(tag); err != +					if err := git.CmdRemoveRemoteTag(tag); err != nil {
++						opts.P.Printf("%s remote tag not removed\n", opts.P.Symbols.Error)
++						opts.P.Printf("%s error: %s\n", opts.P.Symbols.Error, err.Error())
++						os.Exit(1)
++					}
++					opts.P.Printf("%s remote tag removed\n", opts.P.Symbols.Ok)
++				}
++			}
++
++			return nil
++		},
++	}
++
++	return cmd
++}

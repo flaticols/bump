@@ -1,0 +1,54 @@
+--- internal/git/git.go	(revision Before)
++++ internal/git/git.go	(revision After)
+@@ -298,4 +298,51 @@
+ 		}
+ 	}
+ 	if len(validVersions) == 0 {
+-		return semver.Version{}, SemVerTagError{Msg: "no valid semver tags found in the latest times+		return semver.Version{}, SemVerTagError{Msg: "no valid semver tags found in the latest timestamp group"}
++	}
++	sort.Slice(validVersions, func(i, j int) bool {
++		return semver.Compare(validVersions[i], validVersions[j]) > 0
++	})
++
++	return validVersions[0], nil
++}
++
++// CmdCreateTag creates a new Git tag with the specified name
++func CmdCreateTag(tag string) error {
++	cmd := exec.Command("git", "tag", tag)
++	output, err := cmd.CombinedOutput()
++	if err != nil {
++		return fmt.Errorf("error setting git tag: %v - %s", err, string(output))
++	}
++	return nil
++}
++
++// CmdPushTag pushes the specified Git tag to the origin remote repository
++func CmdPushTag(tag string) error {
++	cmd := exec.Command("git", "push", "origin", tag)
++	output, err := cmd.CombinedOutput()
++	if err != nil {
++		return fmt.Errorf("error pushing git tag: %v - %s", err, string(output))
++	}
++	return nil
++}
++
++// CmdRemoveTag removes a git tag from the local repository
++func CmdRemoveTag(tag string) error {
++	cmd := exec.Command("git", "tag", "-d", tag)
++	output, err := cmd.CombinedOutput()
++	if err != nil {
++		return fmt.Errorf("error removing local git tag: %v - %s", err, string(output))
++	}
++	return nil
++}
++
++// CmdRemoveRemoteTag deletes a git tag from the remote repository
++func CmdRemoveRemoteTag(tag string) error {
++	cmd := exec.Command("git", "push", "--delete", "origin", tag)
++	output, err := cmd.CombinedOutput()
++	if err != nil {
++		return fmt.Errorf("error removing remote git tag: %v - %s", err, string(output))
++	}
++	return nil
++}

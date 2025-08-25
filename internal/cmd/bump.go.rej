@@ -1,0 +1,309 @@
+--- internal/cmd/bump.go	(revision Before)
++++ internal/cmd/bump.go	(revision After)
+@@ -2,10 +2,7 @@
+ 
+ import (
+ 	"errors"
+-<<<<<<< HEAD
+ 	"fmt"
+-=======
+->>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
+ 	"os"
+ 	"os/exec"
+ 	"runtime/debug"
+@@ -50,7 +47,6 @@
+ 	Symbols Symbols
+ }
+ 
+-<<<<<<< HEAD
+ type JSONTag struct {
+ 	Current string `json:"current"`
+ 	New     string `json:"new"`
+@@ -61,9 +57,6 @@
+ 	Checks     []string `json:"checks"`
+ 	Tag        JSONTag  `json:"tag"`
+ }
+-
+-=======
+->>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
+ type Options struct {
+ 	Exit           func()
+ 	P              TextPrinters
+@@ -72,13 +65,10 @@
+ 	Verbose        bool
+ 	OnlyLocal      bool
+ 	BraveMode      bool
+-	NoColor        bool
+-<<<<<<< HEAD
++ NoColor        bool
+ 	JSON           bool
+ 	Result         JSONResult
+-=======
+ 	Prefix         string
+->>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
+ }
+ 
+ // CreateRootCmd initializes and returns the root command for the "bump" CLI tool.
+@@ -114,34 +104,19 @@
+ 		Example:   "  bump         # Bumps patch version (e.g., v1.2.3 -> v1.2.4)\n  bump major   # Bumps major version (e.g., v1.2.3 -> v2.0.0)\n  bump minor   # Bumps minor version (e.g., v1.2.3 -> v1.3.0)\n  bump patch   # Bumps patch version (e.g., v1.2.3 -> v1.2.4)",
+ 		Args:      cobra.OnlyValidArgs,
+ 		ValidArgs: []string{major, minor, patch},
+-<<<<<<< HEAD
+ 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+ 			return gitStateChecks(opts)
+ 		},
+-		RunE: func(cmd *cobra.Command, args []string) error {
+-			ver, err := git.CmdGetTag()
+-=======
+-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+-			gitStateChecks(opts)
+-		},
+ 		RunE: func(cmd *cobra.Command, args []string) error {
+ 			ver, err := git.CmdGetTag(opts.Prefix)
+->>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
+ 			var tagErr G.SemVerTagError
+ 			var nextVer semver.Version
+ 			if err != nil {
+ 				if errors.As(err, &tagErr) {
+ 					if !tagErr.NoTags {
+-<<<<<<< HEAD
+ 						return fmt.Errorf("invalid semver tag: %s", tagErr.Tag)
+ 					}
+ 					// No tags: start from 0.0.0
+-=======
+-						opts.P.Println(opts.P.Err("tag '%s' is not a valid semver tag", tagErr.Tag))
+-						os.Exit(1)
+-					}
+-
+->>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
+ 					opts.P.Printf("%s no tags found, using default version %s\n", opts.P.Symbols.Bullet,
+ 						opts.P.Version(G.DefaultVersion))
+ 					ver, _ = semver.Parse("0.0.0")
+@@ -149,47 +124,28 @@
+ 					return err
+ 				}
+ 			}
+-<<<<<<< HEAD
+-			
++
+ 			// Persist current tag (empty if NoTags)
+ 			if err == nil {
+-				opts.Result.Tag.Current = opts.P.Version(ver.String())
++				opts.Result.Tag.Current = buildTag(opts, ver)
+ 			} else if tagErr.NoTags {
+ 				opts.Result.Tag.Current = ""
+ 			}
+-			
+-			nextVer = createNewVersion(getIncPart(args), ver)
+-			tag := opts.P.Version(nextVer.String())
+-			opts.Result.Tag.New = tag
+-			
+-			if err != nil && tagErr.NoTags {
+-				opts.P.Printf("%s set tag %s\n", opts.P.Symbols.Ok, tag)
+-			} else {
+-				opts.P.Printf("%s bump tag %s => %s\n", opts.P.Symbols.Bullet, opts.P.Version(ver.String()), tag)
+-			}
+-			
+-=======
+ 
+ 			nextVer = createNewVersion(getIncPart(args), ver)
+ 			tag := buildTag(opts, nextVer)
++			opts.Result.Tag.New = tag
+ 
+ 			if err != nil && tagErr.NoTags {
+ 				opts.P.Printf("%s set tag %s\n", opts.P.Symbols.Ok, tag)
+ 			} else {
+ 				opts.P.Printf("%s bump tag %s => %s\n", opts.P.Symbols.Bullet, buildTag(opts, ver), tag)
+ 			}
+-
+->>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
+ 			err = git.CmdCreateTag(tag)
+ 			if err != nil {
+ 				return err
+ 			}
+ 			opts.P.Printf("%s tag %s created\n", opts.P.Symbols.Ok, tag)
+-<<<<<<< HEAD
+-			
+-=======
+-
+->>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
+ 			if !opts.OnlyLocal {
+ 				err = git.CmdPushTag(tag)
+ 				if err != nil {
+@@ -197,23 +153,16 @@
+ 				}
+ 				opts.P.Printf("%s tag %s pushed\n", opts.P.Symbols.Ok, tag)
+ 			}
+-<<<<<<< HEAD
+-			
++
+ 			opts.Result.Successful = true
+-=======
+-
+->>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
+ 			return nil
+ 		},
+ 	}
+ 
+ 	cmd.SetVersionTemplate("{{.Version}}\n")
+ 	cmd.Version = handleVersionCommand()
+-<<<<<<< HEAD
+ 	cmd.SilenceErrors = true
+ 	cmd.SilenceUsage = true
+-=======
+->>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
+ 
+ 	return cmd
+ }
+@@ -233,7 +182,6 @@
+ // Parameters:
+ //   - opts (*Options): A pointer to an Options struct containing configuration
+ //     and utility methods for performing Git operations and printing messages.
+-<<<<<<< HEAD
+ func gitStateChecks(opts *Options) error {
+ 	branch, err := git.CmdCurrentBranch()
+ 	if err != nil {
+@@ -241,37 +189,19 @@
+ 		if !opts.BraveMode {
+ 			return err
+ 		}
+-=======
+-func gitStateChecks(opts *Options) {
+-	exitIfNotBrave := func() {
+-		if !opts.BraveMode {
+-			os.Exit(1)
+-		}
+-	}
+-
+-	branch, err := git.CmdCurrentBranch()
+-	if err != nil {
+-		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
+-		exitIfNotBrave()
+->>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
+ 	}
+ 	ok := slices.Contains(opts.DefaultBranchs, branch)
+ 	if !ok {
+ 		opts.P.Printf("%s not on default branch (%s)\n", opts.P.Symbols.Error, branch)
+-<<<<<<< HEAD
+ 		if !opts.BraveMode {
+ 			return errors.New("not on default branch")
+ 		}
+-=======
+-		exitIfNotBrave()
+->>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
+ 	} else {
+ 		opts.P.Printf("%s on default branch (%s)\n", opts.P.Symbols.Ok, branch)
+ 	}
+ 
+ 	if yes, err := git.CmdHasLocalChanges(); err != nil {
+ 		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
+-<<<<<<< HEAD
+ 		if !opts.BraveMode {
+ 			return err
+ 		}
+@@ -280,7 +210,103 @@
+ 		if !opts.BraveMode {
+ 			return errors.New("uncommitted changes")
+ 		}
++	} else {
++		opts.P.Printf("%s no uncommitted changes\n", opts.P.Symbols.Ok)
++	}
++
++	if !opts.OnlyLocal {
++		if yes, err := git.CmdHasRemoteChanges(); err != nil {
++			opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
++			if !opts.BraveMode {
++				return err
++			}
++		} else if yes {
++			opts.P.Printf("%s remote changes, pull first\n", opts.P.Symbols.Error)
++			if !opts.BraveMode {
++				return errors.New("remote changes present")
++			}
++		} else {
++			opts.P.Printf("%s no remote changes\n", opts.P.Symbols.Ok)
++		}
++
++		if yes, err := git.CmdHasUnpushedChanges(branch); err != nil {
++			opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
++			if !opts.BraveMode {
++				return err
++			}
++		} else if yes {
++			opts.P.Printf("%s unpushed changes\n", opts.P.Symbols.Error)
++			if !opts.BraveMode {
++				return errors.New("unpushed changes present")
++			}
++		} else {
++			opts.P.Printf("%s no unpushed changes\n", opts.P.Symbols.Ok)
++		}
++
++		if yes, err := git.CmdHasRemoteUnfetchedTags(); err != nil {
++			opts.P.Printf("%s %s\n", opts.P.Symbols.Warning, err.Error())
++		} else if yes {
++			opts.P.Printf("%s remote has new tags, fetching tags first\n", opts.P.Symbols.Warning)
++			fetchCmd := exec.Command("git", "fetch", "--tags")
++			if err := fetchCmd.Run(); err != nil {
++				opts.P.Printf("%s failed to fetch tags: %s\n", opts.P.Symbols.Error, err.Error())
++<<<<<<< HEAD
++				if !opts.BraveMode {
++					return err
++				}
+ =======
+-		exitIfNotBrave()
+-	} else if yes {
+-		opts.P.Printf("%s uncom+				exitIfNotBrave()
++>>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
++			}
++			opts.P.Printf("%s tags fetched successfully\n", opts.P.Symbols.Ok)
++		} else {
++			opts.P.Printf("%s no new remote tags\n", opts.P.Symbols.Ok)
++		}
++	}
++<<<<<<< HEAD
++	return nil
++=======
++>>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
++}
++
++// handleVersionCommand handles the version command and exits.
++func handleVersionCommand() string {
++	info, _ := debug.ReadBuildInfo()
++	return info.Main.Version
++}
++
++// getIncPart returns the semantic version part to increment based on the provided arguments.
++// If the input slice contains at least one element, the first element is returned as the part to increment.
++// Otherwise, it defaults to returning the patch part.
++func getIncPart(args []string) semVerPart {
++	if len(args) > 0 {
++		return args[0]
++	}
++	return patch
++}
++
++// createNewVersion returns a new semantic version by incrementing the specified part of the provided version.
++// The incPart parameter determines which part of the version to increment: major for a major update,
++// minor for a minor update, and patch (or any unrecognized value, due to fallthrough) for a patch update.
++// It returns the updated semver.Version after performing the corresponding increment operation.
++func createNewVersion(incPart semVerPart, ver semver.Version) semver.Version {
++	switch incPart {
++	case major:
++		return ver.IncrementMajor()
++	case minor:
++		return ver.IncrementMinor()
++	case patch:
++		fallthrough
++	default:
++		return ver.IncrementPatch()
++	}
++}
++<<<<<<< HEAD
++=======
++
++// buildTag constructs the full tag string using the provided options and version.
++// It prepends the optional prefix (if any) to the human-readable version string (which includes the 'v').
++func buildTag(opts *Options, ver semver.Version) string {
++	return opts.Prefix + opts.P.Version(ver.String())
++}
++>>>>>>> 4decc54 ([issue-17] fix: correct formatting of Go code to comply with standards)
