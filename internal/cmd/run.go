@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -37,6 +38,7 @@ func Run() {
 	pf.BoolVarP(&opts.OnlyLocal, "local", "l", false, "if local is set, bump will not error if no remotes are found")
 	pf.BoolVarP(&opts.BraveMode, "brave", "b", false, "if brave is set, bump will not ask any questions (default: false)")
 	pf.BoolVar(&opts.NoColor, "no-color", false, "disable colorful output (default: false)")
+	pf.BoolVar(&opts.JSON, "json", false, "output a single JSON object to stdout")
 	rootCmd.ParseFlags(os.Args[1:])
 
 	opts.Exit = func() {
@@ -60,14 +62,34 @@ func Run() {
 		opts.P.Printf("%s working directory: %s\n", opts.P.Symbols.Bullet, opts.RepoDirectory)
 	}
 
-	err := internal.SetBumpWd(opts.RepoDirectory)
+ err := internal.SetBumpWd(opts.RepoDirectory)
 	if err != nil {
+		if opts.JSON {
+			if opts.Result.Checks == nil {
+				opts.Result.Checks = []string{}
+			}
+			b, _ := json.Marshal(opts.Result)
+			fmt.Fprintln(os.Stdout, string(b))
+		}
 		opts.P.Println(opts.P.Err(err.Error()))
 		os.Exit(1)
 	}
 
 	rootCmd.ErrOrStderr()
-	if err := rootCmd.Execute(); err != nil {
+	execErr := rootCmd.Execute()
+
+	if opts.JSON {
+		// Always print a single JSON line to stdout
+		if opts.Result.Checks == nil {
+			opts.Result.Checks = []string{}
+		}
+		b, _ := json.Marshal(opts.Result)
+		fmt.Fprintln(os.Stdout, string(b))
+	}
+
+	if execErr != nil {
+		// Print error to stderr and exit 1
+		opts.P.Println(opts.P.Err(execErr.Error()))
 		os.Exit(1)
 	}
 }
