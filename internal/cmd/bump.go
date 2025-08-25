@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -46,6 +47,17 @@ type TextPrinters struct {
 	Symbols Symbols
 }
 
+type JSONTag struct {
+	Current string `json:"current"`
+	New     string `json:"new"`
+}
+
+type JSONResult struct {
+	Successful bool     `json:"successful"`
+	Checks     []string `json:"checks"`
+	Tag        JSONTag  `json:"tag"`
+}
+
 type Options struct {
 	Exit           func()
 	P              TextPrinters
@@ -55,6 +67,8 @@ type Options struct {
 	OnlyLocal      bool
 	BraveMode      bool
 	NoColor        bool
+	JSON           bool
+	Result         JSONResult
 }
 
 // CreateRootCmd initializes and returns the root command for the "bump" CLI tool.
@@ -90,8 +104,8 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 		Example:   "  bump         # Bumps patch version (e.g., v1.2.3 -> v1.2.4)\n  bump major   # Bumps major version (e.g., v1.2.3 -> v2.0.0)\n  bump minor   # Bumps minor version (e.g., v1.2.3 -> v1.3.0)\n  bump patch   # Bumps patch version (e.g., v1.2.3 -> v1.2.4)",
 		Args:      cobra.OnlyValidArgs,
 		ValidArgs: []string{major, minor, patch},
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			gitStateChecks(opts)
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			return gitStateChecks(opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ver, err := git.CmdGetTag()
@@ -100,10 +114,9 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 			if err != nil {
 				if errors.As(err, &tagErr) {
 					if !tagErr.NoTags {
-						opts.P.Println(opts.P.Err("tag '%s' is not a valid semver tag", tagErr.Tag))
-						os.Exit(1)
+						return fmt.Errorf("invalid semver tag: %s", tagErr.Tag)
 					}
-
+					// No tags: start from 0.0.0
 					opts.P.Printf("%s no tags found, using default version %s\n", opts.P.Symbols.Bullet,
 						opts.P.Version(G.DefaultVersion))
 					ver, _ = semver.Parse("0.0.0")
@@ -111,22 +124,30 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 					return err
 				}
 			}
-
+			
+			// Persist current tag (empty if NoTags)
+			if err == nil {
+				opts.Result.Tag.Current = opts.P.Version(ver.String())
+			} else if tagErr.NoTags {
+				opts.Result.Tag.Current = ""
+			}
+			
 			nextVer = createNewVersion(getIncPart(args), ver)
 			tag := opts.P.Version(nextVer.String())
-
+			opts.Result.Tag.New = tag
+			
 			if err != nil && tagErr.NoTags {
 				opts.P.Printf("%s set tag %s\n", opts.P.Symbols.Ok, tag)
 			} else {
 				opts.P.Printf("%s bump tag %s => %s\n", opts.P.Symbols.Bullet, opts.P.Version(ver.String()), tag)
 			}
-
+			
 			err = git.CmdCreateTag(tag)
 			if err != nil {
 				return err
 			}
 			opts.P.Printf("%s tag %s created\n", opts.P.Symbols.Ok, tag)
-
+			
 			if !opts.OnlyLocal {
 				err = git.CmdPushTag(tag)
 				if err != nil {
@@ -134,13 +155,16 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 				}
 				opts.P.Printf("%s tag %s pushed\n", opts.P.Symbols.Ok, tag)
 			}
-
+			
+			opts.Result.Successful = true
 			return nil
 		},
 	}
 
 	cmd.SetVersionTemplate("{{.Version}}\n")
 	cmd.Version = handleVersionCommand()
+	cmd.SilenceErrors = true
+	cmd.SilenceUsage = true
 
 	return cmd
 }
@@ -160,32 +184,34 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 // Parameters:
 //   - opts (*Options): A pointer to an Options struct containing configuration
 //     and utility methods for performing Git operations and printing messages.
-func gitStateChecks(opts *Options) {
-	exitIfNotBrave := func() {
-		if !opts.BraveMode {
-			os.Exit(1)
-		}
-	}
-
+func gitStateChecks(opts *Options) error {
 	branch, err := git.CmdCurrentBranch()
 	if err != nil {
 		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
-		exitIfNotBrave()
+		if !opts.BraveMode {
+			return err
+		}
 	}
 	ok := slices.Contains(opts.DefaultBranchs, branch)
 	if !ok {
 		opts.P.Printf("%s not on default branch (%s)\n", opts.P.Symbols.Error, branch)
-		exitIfNotBrave()
+		if !opts.BraveMode {
+			return errors.New("not on default branch")
+		}
 	} else {
 		opts.P.Printf("%s on default branch (%s)\n", opts.P.Symbols.Ok, branch)
 	}
 
 	if yes, err := git.CmdHasLocalChanges(); err != nil {
 		opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
-		exitIfNotBrave()
+		if !opts.BraveMode {
+			return err
+		}
 	} else if yes {
 		opts.P.Printf("%s uncommitted changes\n", opts.P.Symbols.Error)
-		exitIfNotBrave()
+		if !opts.BraveMode {
+			return errors.New("uncommitted changes")
+		}
 	} else {
 		opts.P.Printf("%s no uncommitted changes\n", opts.P.Symbols.Ok)
 	}
@@ -193,20 +219,28 @@ func gitStateChecks(opts *Options) {
 	if !opts.OnlyLocal {
 		if yes, err := git.CmdHasRemoteChanges(); err != nil {
 			opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
-			exitIfNotBrave()
+			if !opts.BraveMode {
+				return err
+			}
 		} else if yes {
 			opts.P.Printf("%s remote changes, pull first\n", opts.P.Symbols.Error)
-			exitIfNotBrave()
+			if !opts.BraveMode {
+				return errors.New("remote changes present")
+			}
 		} else {
 			opts.P.Printf("%s no remote changes\n", opts.P.Symbols.Ok)
 		}
 
 		if yes, err := git.CmdHasUnpushedChanges(branch); err != nil {
 			opts.P.Printf("%s %s\n", opts.P.Symbols.Error, err.Error())
-			exitIfNotBrave()
+			if !opts.BraveMode {
+				return err
+			}
 		} else if yes {
 			opts.P.Printf("%s unpushed changes\n", opts.P.Symbols.Error)
-			exitIfNotBrave()
+			if !opts.BraveMode {
+				return errors.New("unpushed changes present")
+			}
 		} else {
 			opts.P.Printf("%s no unpushed changes\n", opts.P.Symbols.Ok)
 		}
@@ -218,13 +252,16 @@ func gitStateChecks(opts *Options) {
 			fetchCmd := exec.Command("git", "fetch", "--tags")
 			if err := fetchCmd.Run(); err != nil {
 				opts.P.Printf("%s failed to fetch tags: %s\n", opts.P.Symbols.Error, err.Error())
-				exitIfNotBrave()
+				if !opts.BraveMode {
+					return err
+				}
 			}
 			opts.P.Printf("%s tags fetched successfully\n", opts.P.Symbols.Ok)
 		} else {
 			opts.P.Printf("%s no new remote tags\n", opts.P.Symbols.Ok)
 		}
 	}
+	return nil
 }
 
 // handleVersionCommand handles the version command and exits.
