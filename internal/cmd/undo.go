@@ -38,7 +38,7 @@ func CreateUndoCmd(opts *Options) *cobra.Command {
 		Example: "  bump undo           # Removes the latest tag (" +
 			"prompts for confirmation)\n  bump undo --brave   # Removes the latest tag without confirmation",
 		RunE: func(cmd *cobra.Command, args []string) error {
-   ver, err := git.CmdGetTag(opts.Prefix)
+			ver, err := git.CmdGetTag(opts.Prefix)
 			var tagErr G.SemVerTagError
 			if err != nil {
 				if errors.As(err, &tagErr) {
@@ -52,7 +52,7 @@ func CreateUndoCmd(opts *Options) *cobra.Command {
 				return err
 			}
 
-   tag := buildTag(opts, ver)
+			tag := buildTag(opts, ver)
 			confirm := tui.AskConfirmation("Are you sure?", tui.Yes(fmt.Sprintf("Yes remove %s!", tag)), tui.AvoidIf(opts.BraveMode, true))
 
 			if confirm {
