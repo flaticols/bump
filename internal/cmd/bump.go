@@ -68,6 +68,7 @@ type Options struct {
 	BraveMode      bool
 	NoColor        bool
 	JSON           bool
+	Prefix         string
 	Result         JSONResult
 }
 
@@ -108,7 +109,7 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 			return gitStateChecks(opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ver, err := git.CmdGetTag()
+			ver, err := git.CmdGetTag(opts.Prefix)
 			var tagErr G.SemVerTagError
 			var nextVer semver.Version
 			if err != nil {
@@ -124,38 +125,49 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 					return err
 				}
 			}
-			
+
 			// Persist current tag (empty if NoTags)
 			if err == nil {
-				opts.Result.Tag.Current = opts.P.Version(ver.String())
+				current := opts.P.Version(ver.String())
+				if opts.Prefix != "" {
+					current = opts.Prefix + current
+				}
+				opts.Result.Tag.Current = current
 			} else if tagErr.NoTags {
 				opts.Result.Tag.Current = ""
 			}
-			
+
 			nextVer = createNewVersion(getIncPart(args), ver)
-			tag := opts.P.Version(nextVer.String())
-			opts.Result.Tag.New = tag
-			
-			if err != nil && tagErr.NoTags {
-				opts.P.Printf("%s set tag %s\n", opts.P.Symbols.Ok, tag)
-			} else {
-				opts.P.Printf("%s bump tag %s => %s\n", opts.P.Symbols.Bullet, opts.P.Version(ver.String()), tag)
+			newTag := opts.P.Version(nextVer.String())
+			if opts.Prefix != "" {
+				newTag = opts.Prefix + newTag
 			}
-			
-			err = git.CmdCreateTag(tag)
+			opts.Result.Tag.New = newTag
+
+			if err != nil && tagErr.NoTags {
+				opts.P.Printf("%s set tag %s\n", opts.P.Symbols.Ok, newTag)
+			} else {
+				prev := opts.P.Version(ver.String())
+				if opts.Prefix != "" {
+					prev = opts.Prefix + prev
+				}
+				opts.P.Printf("%s bump tag %s => %s\n", opts.P.Symbols.Bullet, prev, newTag)
+			}
+
+			err = git.CmdCreateTag(newTag)
 			if err != nil {
 				return err
 			}
-			opts.P.Printf("%s tag %s created\n", opts.P.Symbols.Ok, tag)
-			
+			opts.P.Printf("%s tag %s created\n", opts.P.Symbols.Ok, newTag)
+
 			if !opts.OnlyLocal {
-				err = git.CmdPushTag(tag)
+				err = git.CmdPushTag(newTag)
 				if err != nil {
 					return err
 				}
-				opts.P.Printf("%s tag %s pushed\n", opts.P.Symbols.Ok, tag)
+				opts.P.Printf("%s tag %s pushed\n", opts.P.Symbols.Ok, newTag)
 			}
-			
+
 			opts.Result.Successful = true
 			return nil
 		},

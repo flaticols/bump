@@ -39,6 +39,7 @@ func Run() {
 	pf.BoolVarP(&opts.BraveMode, "brave", "b", false, "if brave is set, bump will not ask any questions (default: false)")
 	pf.BoolVar(&opts.NoColor, "no-color", false, "disable colorful output (default: false)")
 	pf.BoolVar(&opts.JSON, "json", false, "output a single JSON object to stdout")
+	pf.StringVar(&opts.Prefix, "prefix", "", "tag prefix to use (e.g., 'pkg/x')")
 	rootCmd.ParseFlags(os.Args[1:])
 
 	opts.Exit = func() {
