@@ -42,6 +42,8 @@ bump undo     # Removes the latest semver git tag
 --local, -l      If local is set, bump will not error if no remotes are found
 --brave, -b      If brave is set, bump will not ask any questions (default: false)
 --no-color       Disable colorful output (default: false)
+--json           Output a single JSON object to stdout
+--prefix         Tag prefix to use for monorepo support (e.g., 'pkg/x')
 --version        Print version information
 ```
 
@@ -78,6 +80,34 @@ $ bump --brave
 • tag v1.2.4 pushed
 ```
 
+## Monorepo Support
+
+`bump` supports monorepos where each package has its own version tags with prefixes. Use the `--prefix` flag to specify the package prefix:
+
+```bash
+# Bump version for a specific package in a monorepo
+bump --prefix pkg/x           # Bumps patch version (e.g., pkg/x/v1.2.3 -> pkg/x/v1.2.4)
+bump major --prefix pkg/x     # Bumps major version (e.g., pkg/x/v1.2.3 -> pkg/x/v2.0.0)
+bump minor --prefix pkg/x     # Bumps minor version (e.g., pkg/x/v1.2.3 -> pkg/x/v1.3.0)
+
+# Different packages in the same repo can have different versions
+bump --prefix pkg/y           # Works independently of pkg/x tags
+bump --prefix services/api    # Can use any prefix structure
+```
+
+Example output with prefix:
+```bash
+$ bump --prefix pkg/x
+• on default branch: main
+• no uncommitted changes
+• no remote changes
+• no unpushed changes
+• no new remote tags
+• bump tag pkg/x/v1.2.3 => pkg/x/v1.2.4
+• tag pkg/x/v1.2.4 created
+• tag pkg/x/v1.2.4 pushed
+```
+
 ## Features
 
 - Automatically detects and increments from the latest git tag
@@ -88,3 +118,4 @@ $ bump --brave
 - Provides colorful terminal output with status indicators
 - Support for brave mode to bypass warnings and continue operations
 - Allows removing the latest tag with the `undo` command
+- Monorepo support with custom tag prefixes (e.g., `pkg/name/vX.X.X`)
