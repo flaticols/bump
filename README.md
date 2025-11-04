@@ -27,10 +27,17 @@ go install github.com/flaticols/bump@latest
 
 ```bash
 # In your git repository
-bump          # Bumps patch version (e.g., 1.2.3 -> 1.2.4)
-bump major    # Bumps major version (e.g., 1.2.3 -> 2.0.0)
-bump minor    # Bumps minor version (e.g., 1.2.3 -> 1.3.0)
-bump patch    # Bumps patch version (e.g., 1.2.3 -> 1.2.4)
+bump          # Bumps patch version (e.g., v1.2.3 -> v1.2.4)
+bump major    # Bumps major version (e.g., v1.2.3 -> v2.0.0)
+bump minor    # Bumps minor version (e.g., v1.2.3 -> v1.3.0)
+bump patch    # Bumps patch version (e.g., v1.2.3 -> v1.2.4)
+
+# Monorepo: specify package name as last argument
+bump pkg/x           # Bumps patch for pkg/x (e.g., pkg/x/v1.2.3 -> pkg/x/v1.2.4)
+bump major pkg/x     # Bumps major for pkg/x (e.g., pkg/x/v1.2.3 -> pkg/x/v2.0.0)
+bump minor services/api   # Works with any prefix structure
+
+# Other commands
 bump undo     # Removes the latest semver git tag
 ```
 
@@ -82,30 +89,36 @@ $ bump --brave
 
 ## Monorepo Support
 
-`bump` supports monorepos where each package has its own version tags with prefixes. Use the `--prefix` flag to specify the package prefix:
+`bump` supports monorepos where each package has its own version tags with prefixes. Simply specify the package name as the last argument:
 
 ```bash
 # Bump version for a specific package in a monorepo
-bump --prefix pkg/x           # Bumps patch version (e.g., pkg/x/v1.2.3 -> pkg/x/v1.2.4)
-bump major --prefix pkg/x     # Bumps major version (e.g., pkg/x/v1.2.3 -> pkg/x/v2.0.0)
-bump minor --prefix pkg/x     # Bumps minor version (e.g., pkg/x/v1.2.3 -> pkg/x/v1.3.0)
+bump pkg/x              # Bumps patch version (e.g., pkg/x/v1.2.3 -> pkg/x/v1.2.4)
+bump major pkg/x        # Bumps major version (e.g., pkg/x/v1.2.3 -> pkg/x/v2.0.0)
+bump minor pkg/x        # Bumps minor version (e.g., pkg/x/v1.2.3 -> pkg/x/v1.3.0)
 
 # Different packages in the same repo can have different versions
-bump --prefix pkg/y           # Works independently of pkg/x tags
-bump --prefix services/api    # Can use any prefix structure
+bump pkg/y              # Works independently of pkg/x tags
+bump services/api       # Can use any prefix structure
+bump major libs/utils   # Works with all version parts
+
+# You can also use the --prefix flag for backward compatibility
+bump --prefix pkg/x     # Same as: bump pkg/x
 ```
 
-Example output with prefix:
+The package name is used exactly as provided - if you want `pkg/x/foo/v1.0.0`, use `bump pkg/x/foo`.
+
+Example output:
 ```bash
-$ bump --prefix pkg/x
+$ bump major pkg/x
 • on default branch: main
 • no uncommitted changes
 • no remote changes
 • no unpushed changes
 • no new remote tags
-• bump tag pkg/x/v1.2.3 => pkg/x/v1.2.4
-• tag pkg/x/v1.2.4 created
-• tag pkg/x/v1.2.4 pushed
+• bump tag pkg/x/v1.2.3 => pkg/x/v2.0.0
+• tag pkg/x/v2.0.0 created
+• tag pkg/x/v2.0.0 pushed
 ```
 
 ## Features

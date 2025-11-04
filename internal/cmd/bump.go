@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"runtime/debug"
 	"slices"
+	"strings"
 
 	"github.com/flaticols/bump/internal/git"
 	G "github.com/flaticols/bump/internal/git"
@@ -98,16 +99,33 @@ type Options struct {
 //   - bump patch   # Bumps the patch version (e.g., v1.2.3 -> v1.2.4).
 func CreateRootCmd(opts *Options) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:       "bump [major|minor|patch]",
+		Use:       "bump [major|minor|patch] [package]",
 		Short:     "A command-line tool to easily bump the git tag version of your project using semantic versioning",
 		Long:      `Bump is a lightweight command-line tool that helps you manage semantic versioning tags in Git repositories. It automates version increments following SemVer standards, making it easy to maintain proper versioning in your projects.`,
-		Example:   "  bump         # Bumps patch version (e.g., v1.2.3 -> v1.2.4)\n  bump major   # Bumps major version (e.g., v1.2.3 -> v2.0.0)\n  bump minor   # Bumps minor version (e.g., v1.2.3 -> v1.3.0)\n  bump patch   # Bumps patch version (e.g., v1.2.3 -> v1.2.4)",
-		Args:      cobra.OnlyValidArgs,
-		ValidArgs: []string{major, minor, patch},
+		Example:   "  bump              # Bumps patch version (e.g., v1.2.3 -> v1.2.4)\n  bump major        # Bumps major version (e.g., v1.2.3 -> v2.0.0)\n  bump minor        # Bumps minor version (e.g., v1.2.3 -> v1.3.0)\n  bump patch        # Bumps patch version (e.g., v1.2.3 -> v1.2.4)\n  bump pkg/x        # Bumps patch for pkg/x (e.g., pkg/x/v1.2.3 -> pkg/x/v1.2.4)\n  bump major pkg/x  # Bumps major for pkg/x (e.g., pkg/x/v1.2.3 -> pkg/x/v2.0.0)",
+		Args:      cobra.MaximumNArgs(2),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return gitStateChecks(opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Parse arguments: [version_part] [package]
+			// Positional package argument takes priority over --prefix flag
+			incPart := getIncPart(args)
+			pkgName := getPackageName(args)
+			if pkgName != "" {
+				// Positional package arg overrides --prefix flag
+				opts.Prefix = pkgName
+				// Add trailing slash if not present
+				if opts.Prefix != "" && !strings.HasSuffix(opts.Prefix, "/") {
+					opts.Prefix = opts.Prefix + "/"
+				}
+			} else if opts.Prefix != "" {
+				// Ensure --prefix has trailing slash for consistency
+				if !strings.HasSuffix(opts.Prefix, "/") {
+					opts.Prefix = opts.Prefix + "/"
+				}
+			}
+
 			ver, err := git.CmdGetTag(opts.Prefix)
 			var tagErr G.SemVerTagError
 			var nextVer semver.Version
@@ -136,7 +154,7 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 				opts.Result.Tag.Current = ""
 			}
 
-			nextVer = createNewVersion(getIncPart(args), ver)
+			nextVer = createNewVersion(incPart, ver)
 			newTag := opts.P.Version(nextVer.String())
 			if opts.Prefix != "" {
 				newTag = opts.Prefix + newTag
@@ -282,13 +300,46 @@ func handleVersionCommand() string {
 }
 
 // getIncPart returns the semantic version part to increment based on the provided arguments.
-// If the input slice contains at least one element, the first element is returned as the part to increment.
-// Otherwise, it defaults to returning the patch part.
+// If the first argument is a valid version part (major/minor/patch), it is returned.
+// Otherwise, it defaults to returning patch.
 func getIncPart(args []string) semVerPart {
 	if len(args) > 0 {
-		return args[0]
+		firstArg := args[0]
+		// Check if first arg is a valid version part
+		if firstArg == major || firstArg == minor || firstArg == patch {
+			return firstArg
+		}
+		// First arg is not a version part, so it must be a package name
+		// Default to patch
+		return patch
 	}
 	return patch
+}
+
+// getPackageName extracts the package name from command arguments.
+// Returns empty string if no package name is provided.
+// Supports two argument patterns:
+//   - bump <package>           # package is first arg
+//   - bump <version> <package> # package is second arg
+func getPackageName(args []string) string {
+	if len(args) == 0 {
+		return ""
+	}
+
+	firstArg := args[0]
+
+	// If we have 2 args, second is always the package name
+	if len(args) == 2 {
+		return args[1]
+	}
+
+	// If we have 1 arg and it's a version part, no package name
+	if firstArg == major || firstArg == minor || firstArg == patch {
+		return ""
+	}
+
+	// Single arg that's not a version part must be the package name
+	return firstArg
 }
 
 // createNewVersion returns a new semantic version by incrementing the specified part of the provided version.
