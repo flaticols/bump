@@ -108,7 +108,44 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 			return gitStateChecks(opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runBump(cmd, args, opts)
+			// Parse arguments and normalize prefix
+			incPart := getIncPart(args)
+			opts.Prefix = normalizePrefix(getPackageName(args), opts.Prefix)
+
+			// Get current version or start from 0.0.0
+			ver, noTags, err := getCurrentVersion(opts)
+			if err != nil {
+				return err
+			}
+
+			// Store current tag in result
+			if !noTags {
+				opts.Result.Tag.Current = formatTag(ver.String(), opts.Prefix, opts.P.Version)
+			}
+
+			// Calculate and create new version
+			nextVer := createNewVersion(incPart, ver)
+			newTag := formatTag(nextVer.String(), opts.Prefix, opts.P.Version)
+			opts.Result.Tag.New = newTag
+
+			// Print version change
+			printVersionChange(opts, noTags, ver.String(), newTag)
+
+			// Create and push tag
+			if err := git.CmdCreateTag(newTag); err != nil {
+				return err
+			}
+			opts.P.Printf("%s tag %s created\n", opts.P.Symbols.Ok, newTag)
+
+			if !opts.OnlyLocal {
+				if err := git.CmdPushTag(newTag); err != nil {
+					return err
+				}
+				opts.P.Printf("%s tag %s pushed\n", opts.P.Symbols.Ok, newTag)
+			}
+
+			opts.Result.Successful = true
+			return nil
 		},
 	}
 
@@ -118,48 +155,6 @@ func CreateRootCmd(opts *Options) *cobra.Command {
 	cmd.SilenceUsage = true
 
 	return cmd
-}
-
-// runBump executes the main bump logic
-func runBump(cmd *cobra.Command, args []string, opts *Options) error {
-	// Parse arguments and normalize prefix
-	incPart := getIncPart(args)
-	opts.Prefix = normalizePrefix(getPackageName(args), opts.Prefix)
-
-	// Get current version or start from 0.0.0
-	ver, noTags, err := getCurrentVersion(opts)
-	if err != nil {
-		return err
-	}
-
-	// Store current tag in result
-	if !noTags {
-		opts.Result.Tag.Current = formatTag(ver.String(), opts.Prefix, opts.P.Version)
-	}
-
-	// Calculate and create new version
-	nextVer := createNewVersion(incPart, ver)
-	newTag := formatTag(nextVer.String(), opts.Prefix, opts.P.Version)
-	opts.Result.Tag.New = newTag
-
-	// Print version change
-	printVersionChange(opts, noTags, ver.String(), newTag)
-
-	// Create and push tag
-	if err := git.CmdCreateTag(newTag); err != nil {
-		return err
-	}
-	opts.P.Printf("%s tag %s created\n", opts.P.Symbols.Ok, newTag)
-
-	if !opts.OnlyLocal {
-		if err := git.CmdPushTag(newTag); err != nil {
-			return err
-		}
-		opts.P.Printf("%s tag %s pushed\n", opts.P.Symbols.Ok, newTag)
-	}
-
-	opts.Result.Successful = true
-	return nil
 }
 
 // getCurrentVersion retrieves the current version from git tags or returns 0.0.0 if no tags exist
