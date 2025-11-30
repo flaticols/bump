@@ -99,11 +99,11 @@ type Options struct {
 //   - bump patch   # Bumps the patch version (e.g., v1.2.3 -> v1.2.4).
 func CreateRootCmd(opts *Options) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:       "bump [major|minor|patch] [package]",
-		Short:     "A command-line tool to easily bump the git tag version of your project using semantic versioning",
-		Long:      `Bump is a lightweight command-line tool that helps you manage semantic versioning tags in Git repositories. It automates version increments following SemVer standards, making it easy to maintain proper versioning in your projects.`,
-		Example:   "  bump              # Bumps patch version (e.g., v1.2.3 -> v1.2.4)\n  bump major        # Bumps major version (e.g., v1.2.3 -> v2.0.0)\n  bump minor        # Bumps minor version (e.g., v1.2.3 -> v1.3.0)\n  bump patch        # Bumps patch version (e.g., v1.2.3 -> v1.2.4)\n  bump pkg/x        # Bumps patch for pkg/x (e.g., pkg/x/v1.2.3 -> pkg/x/v1.2.4)\n  bump major pkg/x  # Bumps major for pkg/x (e.g., pkg/x/v1.2.3 -> pkg/x/v2.0.0)",
-		Args:      cobra.MaximumNArgs(2),
+		Use:     "bump [major|minor|patch] [package]",
+		Short:   "A command-line tool to easily bump the git tag version of your project using semantic versioning",
+		Long:    `Bump is a lightweight command-line tool that helps you manage semantic versioning tags in Git repositories. It automates version increments following SemVer standards, making it easy to maintain proper versioning in your projects.`,
+		Example: "  bump              # Bumps patch version (e.g., v1.2.3 -> v1.2.4)\n  bump major        # Bumps major version (e.g., v1.2.3 -> v2.0.0)\n  bump minor        # Bumps minor version (e.g., v1.2.3 -> v1.3.0)\n  bump patch        # Bumps patch version (e.g., v1.2.3 -> v1.2.4)\n  bump pkg/x        # Bumps patch for pkg/x (e.g., pkg/x/v1.2.3 -> pkg/x/v1.2.4)\n  bump major pkg/x  # Bumps major for pkg/x (e.g., pkg/x/v1.2.3 -> pkg/x/v2.0.0)",
+		Args:    cobra.MaximumNArgs(2),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return gitStateChecks(opts)
 		},

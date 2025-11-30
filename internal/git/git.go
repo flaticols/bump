@@ -2,11 +2,14 @@ package git
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"sort"
 	"strings"
 
 	"github.com/flaticols/bump/semver"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 )
 
 const DefaultVersion = "0.0.1"
@@ -26,25 +29,46 @@ func (e SemVerTagError) Error() string {
 	return fmt.Sprintf("error parsing semver tag: '%s'", e.Tag)
 }
 
-// CmdCurrentBranch returns the name of the current Git branch
-func CmdCurrentBranch() (string, error) {
-	return getCurrentBranch()
+// openRepository opens the git repository from the current working directory
+func openRepository() (*git.Repository, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current directory: %w", err)
+	}
+	repo, err := git.PlainOpen(cwd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open git repository: %w", err)
+	}
+	return repo, nil
 }
 
-// getCurrentBranch gets the current branch name with fallback
-func getCurrentBranch() (string, error) {
-	// Try rev-parse first (works for most cases)
-	if branch, err := runGitCommand("rev-parse", "--abbrev-ref", "HEAD"); err == nil {
-		return strings.TrimSpace(branch), nil
+// CmdCurrentBranch returns the name of the current Git branch
+func CmdCurrentBranch() (string, error) {
+	repo, err := openRepository()
+	if err != nil {
+		return "", err
 	}
 
-	// Fallback to symbolic-ref (works for repos without commits)
+	head, err := repo.Head()
+	if err != nil {
+		// Fallback: try to get branch from symbolic ref for repos without commits
+		return getCurrentBranchFallback()
+	}
+
+	if head.Name().IsBranch() {
+		return head.Name().Short(), nil
+	}
+
+	// Detached HEAD - return short hash
+	return head.Hash().String()[:7], nil
+}
+
+// getCurrentBranchFallback gets the current branch name using exec fallback
+func getCurrentBranchFallback() (string, error) {
 	branch, err := runGitCommand("symbolic-ref", "HEAD")
 	if err != nil {
 		return "", fmt.Errorf("failed to get current branch: %w", err)
 	}
-
-	// Remove refs/heads/ prefix
 	return strings.TrimPrefix(strings.TrimSpace(branch), "refs/heads/"), nil
 }
 
@@ -60,20 +84,37 @@ func runGitCommand(args ...string) (string, error) {
 
 // CmdHasLocalChanges checks for uncommitted changes in the local repository
 func CmdHasLocalChanges() (bool, error) {
-	output, err := runGitCommand("status", "--porcelain")
+	repo, err := openRepository()
 	if err != nil {
-		return false, fmt.Errorf("failed to execute git command: %w", err)
+		return false, err
 	}
-	return strings.TrimSpace(output) != "", nil
+
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return false, fmt.Errorf("failed to get worktree: %w", err)
+	}
+
+	status, err := worktree.Status()
+	if err != nil {
+		return false, fmt.Errorf("failed to get status: %w", err)
+	}
+
+	return !status.IsClean(), nil
 }
 
 // hasRemote checks if the repository has any remote configured
 func hasRemote() (bool, error) {
-	output, err := runGitCommand("remote")
+	repo, err := openRepository()
 	if err != nil {
 		return false, err
 	}
-	return strings.TrimSpace(output) != "", nil
+
+	remotes, err := repo.Remotes()
+	if err != nil {
+		return false, err
+	}
+
+	return len(remotes) > 0, nil
 }
 
 // CmdHasRemoteChanges checks if there are remote changes that need to be pulled
@@ -82,19 +123,20 @@ func CmdHasRemoteChanges() (bool, error) {
 		return false, fmt.Errorf("no remotes found in repository")
 	}
 
-	// Fetch latest changes
+	// Fetch latest changes using exec.Command as go-git fetch can be complex
+	// with authentication setup
 	cmd := exec.Command("git", "fetch", "origin")
 	if err := cmd.Run(); err != nil {
 		return false, fmt.Errorf("failed to fetch from remote: %w", err)
 	}
 
-	// Get current branch
-	currentBranch, err := getCurrentBranch()
+	// Get current branch using go-git
+	currentBranch, err := CmdCurrentBranch()
 	if err != nil {
 		return false, err
 	}
 
-	// Check for remote changes (try origin/main first, then current branch)
+	// Check for remote changes using exec.Command for log comparison
 	for _, remoteBranch := range []string{"origin/main", fmt.Sprintf("origin/%s", currentBranch)} {
 		output, err := runGitCommand("log", fmt.Sprintf("HEAD..%s", remoteBranch), "--oneline")
 		if err == nil {
@@ -111,7 +153,7 @@ func CmdHasUnpushedChanges(branch string) (bool, error) {
 		return false, nil
 	}
 
-	// Try to count commits ahead of remote
+	// Use exec.Command for rev-list comparison as it's more reliable
 	output, err := runGitCommand("rev-list", "--count", fmt.Sprintf("origin/%s..%s", branch, branch))
 	if err == nil {
 		return strings.TrimSpace(output) != "0", nil
@@ -136,20 +178,27 @@ func CmdHasRemoteUnfetchedTags() (bool, error) {
 		return false, fmt.Errorf("no remotes found in repository")
 	}
 
-	// Get local tags
-	localTagsOutput, err := runGitCommand("tag")
+	repo, err := openRepository()
+	if err != nil {
+		return false, err
+	}
+
+	// Get local tags using go-git
+	localTagSet := make(map[string]bool)
+	tags, err := repo.Tags()
 	if err != nil {
 		return false, fmt.Errorf("failed to get local tags: %w", err)
 	}
-
-	localTagSet := make(map[string]bool)
-	for _, tag := range strings.Split(strings.TrimSpace(localTagsOutput), "\n") {
-		if tag != "" {
-			localTagSet[tag] = true
-		}
+	err = tags.ForEach(func(ref *plumbing.Reference) error {
+		tagName := ref.Name().Short()
+		localTagSet[tagName] = true
+		return nil
+	})
+	if err != nil {
+		return false, fmt.Errorf("failed to iterate tags: %w", err)
 	}
 
-	// Get remote tags
+	// Get remote tags using exec.Command as it's more reliable with auth
 	remoteOutput, err := runGitCommand("ls-remote", "--tags", "origin")
 	if err != nil {
 		return false, fmt.Errorf("failed to list remote tags: %w", err)
@@ -177,6 +226,8 @@ func CmdHasRemoteUnfetchedTags() (bool, error) {
 // Tags are grouped by creation timestamp, and the highest semver tag from the most
 // recent group is returned. An optional prefix can filter tags (e.g., "pkg/x/").
 func CmdGetTag(prefix string) (semver.Version, error) {
+	// Use exec.Command for for-each-ref as go-git doesn't provide easy access
+	// to tag creation dates in the same format
 	cmd := exec.Command("git", "for-each-ref", "--sort=-creatordate", "--format=%(refname:short) %(creatordate:iso-strict)", "refs/tags")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -257,16 +308,26 @@ func CmdGetTag(prefix string) (semver.Version, error) {
 
 // CmdCreateTag creates a new Git tag with the specified name
 func CmdCreateTag(tag string) error {
-	cmd := exec.Command("git", "tag", tag)
-	output, err := cmd.CombinedOutput()
+	repo, err := openRepository()
 	if err != nil {
-		return fmt.Errorf("error setting git tag: %v - %s", err, string(output))
+		return err
+	}
+
+	head, err := repo.Head()
+	if err != nil {
+		return fmt.Errorf("failed to get HEAD: %w", err)
+	}
+
+	_, err = repo.CreateTag(tag, head.Hash(), nil)
+	if err != nil {
+		return fmt.Errorf("error setting git tag: %w", err)
 	}
 	return nil
 }
 
 // CmdPushTag pushes the specified Git tag to the origin remote repository
 func CmdPushTag(tag string) error {
+	// Use exec.Command for push as go-git push requires complex auth setup
 	cmd := exec.Command("git", "push", "origin", tag)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -277,16 +338,21 @@ func CmdPushTag(tag string) error {
 
 // CmdRemoveTag removes a git tag from the local repository
 func CmdRemoveTag(tag string) error {
-	cmd := exec.Command("git", "tag", "-d", tag)
-	output, err := cmd.CombinedOutput()
+	repo, err := openRepository()
 	if err != nil {
-		return fmt.Errorf("error removing local git tag: %v - %s", err, string(output))
+		return err
+	}
+
+	err = repo.DeleteTag(tag)
+	if err != nil {
+		return fmt.Errorf("error removing local git tag: %w", err)
 	}
 	return nil
 }
 
 // CmdRemoveRemoteTag deletes a git tag from the remote repository
 func CmdRemoveRemoteTag(tag string) error {
+	// Use exec.Command for remote delete as go-git push requires complex auth setup
 	cmd := exec.Command("git", "push", "--delete", "origin", tag)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
