@@ -1,6 +1,7 @@
 package apidiff
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -57,6 +58,42 @@ func (r *Report) WriteText(w io.Writer, printCompatible bool) {
 		}
 		fmt.Fprintln(w)
 	}
+}
+
+// WriteJSON writes the report as a JSON object to w.
+func (r *Report) WriteJSON(w io.Writer) error {
+	type jsonChange struct {
+		Package string `json:"package"`
+		Message string `json:"message"`
+		Kind    string `json:"kind"`
+	}
+
+	type jsonReport struct {
+		Changes       []jsonChange `json:"changes"`
+		Summary       string       `json:"summary"`
+		SuggestedBump string       `json:"suggested_bump"`
+		HasBreaking   bool         `json:"has_breaking"`
+	}
+
+	changes := make([]jsonChange, 0, len(r.Changes))
+	for _, c := range r.Changes {
+		kind := "compatible"
+		if c.Kind == Incompatible {
+			kind = "incompatible"
+		}
+		changes = append(changes, jsonChange{
+			Package: c.Package,
+			Message: c.Message,
+			Kind:    kind,
+		})
+	}
+
+	return json.NewEncoder(w).Encode(jsonReport{
+		Changes:       changes,
+		Summary:       r.Summary(),
+		SuggestedBump: r.SuggestedBump(),
+		HasBreaking:   r.HasBreaking(),
+	})
 }
 
 // Summary returns a one-line summary string.

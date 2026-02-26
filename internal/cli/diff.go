@@ -27,10 +27,13 @@ func runDiff(cfg *Config, args []string) error {
 		return fmt.Errorf("api diff: %w", err)
 	}
 
-	report.WriteText(os.Stdout, true)
-
-	slog.Info(fmt.Sprintf("summary: %s", report.Summary()))
-	slog.Info(fmt.Sprintf("suggested bump: %s", report.SuggestedBump()))
+	if cfg.JSON {
+		report.WriteJSON(os.Stdout)
+	} else {
+		report.WriteText(os.Stdout, true)
+		slog.Info(fmt.Sprintf("summary: %s", report.Summary()))
+		slog.Info(fmt.Sprintf("suggested bump: %s", report.SuggestedBump()))
+	}
 
 	if report.HasBreaking() {
 		os.Exit(1)

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -50,6 +51,10 @@ func runUndo(cfg *Config) error {
 			os.Exit(1)
 		}
 		slog.Info("remote tag removed")
+	}
+
+	if cfg.JSON {
+		json.NewEncoder(os.Stdout).Encode(map[string]string{"removed": tag})
 	}
 
 	return nil

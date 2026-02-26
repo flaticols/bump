@@ -2,8 +2,10 @@
 package cli
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path"
@@ -73,7 +75,11 @@ func Run() {
 	}
 
 	if err != nil {
-		slog.Error(err.Error())
+		if cfg.JSON {
+			json.NewEncoder(os.Stdout).Encode(map[string]string{"error": err.Error()})
+		} else {
+			slog.Error(err.Error())
+		}
 		os.Exit(1)
 	}
 }
@@ -113,12 +119,11 @@ func setupLogger(cfg *Config) {
 		level = slog.LevelDebug
 	}
 
-	styledHandler := ilog.NewStyledHandler(os.Stderr, level, !cfg.Color)
-
 	if cfg.JSON {
-		jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level})
-		slog.SetDefault(slog.New(slog.NewMultiHandler(styledHandler, jsonHandler)))
+		// Silence all logging — commands emit structured JSON directly.
+		slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: level})))
 	} else {
+		styledHandler := ilog.NewStyledHandler(os.Stderr, level, !cfg.Color)
 		slog.SetDefault(slog.New(styledHandler))
 	}
 }
@@ -163,6 +168,6 @@ Examples:
   semtag undo --brave              Remove latest tag without confirmation
   semtag diff v1.0.0 v1.1.0       Compare Go API between two refs
   semtag diff v1.0.0               Compare v1.0.0 against HEAD
-  semtag --json                    Output structured JSON alongside styled stderr
+  semtag --json                    Output results as JSON only
 `)
 }

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -39,10 +40,11 @@ func runBump(cfg *Config, args []string) error {
 	nextVer := incrementVersion(incPart, ver)
 	newTag := formatTag(nextVer.Stringv(), cfg.Prefix)
 
+	var oldTag string
 	if noTags {
 		slog.Info(fmt.Sprintf("set tag %s", newTag))
 	} else {
-		oldTag := formatTag(ver.Stringv(), cfg.Prefix)
+		oldTag = formatTag(ver.Stringv(), cfg.Prefix)
 		slog.Info(fmt.Sprintf("bump tag %s => %s", oldTag, newTag))
 	}
 
@@ -51,6 +53,7 @@ func runBump(cfg *Config, args []string) error {
 	}
 	slog.Info(fmt.Sprintf("tag %s created", newTag))
 
+	pushed := false
 	if !cfg.Local {
 		sp := tui.NewSpinner(os.Stderr, "pushing tag...", cfg.Interactive)
 		sp.Start()
@@ -60,6 +63,18 @@ func runBump(cfg *Config, args []string) error {
 			return err
 		}
 		slog.Info(fmt.Sprintf("tag %s pushed", newTag))
+		pushed = true
+	}
+
+	if cfg.JSON {
+		result := map[string]any{
+			"version": newTag,
+			"pushed":  pushed,
+		}
+		if oldTag != "" {
+			result["previous"] = oldTag
+		}
+		json.NewEncoder(os.Stdout).Encode(result)
 	}
 
 	return nil
