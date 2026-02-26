@@ -1,3 +1,9 @@
+>[!IMPORTANT]
+>Bump has come to an end.
+>It was a nice experiment and playground for different AI agents.
+>After almost a year, I've decided to scrap it and rebuild from scratch, based on the experience I've gained and my actual use cases.
+>So, please welcome https://semtag.dev
+
 # bump
 ![bump-small](https://github.com/user-attachments/assets/fa47f507-24fd-4a7d-8972-6e77e11aa578)
 
