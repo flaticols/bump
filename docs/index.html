@@ -3,18 +3,14 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
 
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="semtag" />
+    <title>semtag — Semantic Versioning for Git</title>
 
-    <title>semtag - Semantic Versioning for Git</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Recursive:wght,CASL,MONO@300..1000,0..1,0..1&family=Rec+Mono+Duotone:wght@300..1000&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1/dist/fonts/geist-sans/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1/dist/fonts/geist-mono/style.css">
 
     <link rel="stylesheet" href="styles.css" />
 </head>
@@ -22,40 +18,39 @@
     <header class="site-header">
         <div class="container">
             <div class="header-content">
-                <a href="#" class="logo-link">semtag</a>
-                <nav class="nav">
+                <a href="#" class="logo">semtag</a>
+                <nav>
                     <a href="#install">Install</a>
                     <a href="#usage">Usage</a>
                     <a href="#features">Features</a>
                     <a href="#examples">Examples</a>
-                    <a href="https://github.com/flaticols/bump" target="_blank" rel="noopener">GitHub</a>
+                    <a href="https://github.com/flaticols/bump">GitHub</a>
                 </nav>
             </div>
         </div>
     </header>
 
     <main>
-        <section id="hero" class="hero">
+        <section class="hero">
             <div class="container">
-                <div class="hero-content">
-                    <h1 class="hero-title">semtag</h1>
-                    <p class="hero-subtitle">Semantic versioning for Git, done right.</p>
-                    <p class="hero-description">A minimal CLI tool that bumps semver tags, detects API changes, and supports multi-module Go repositories. Built with Go stdlib and zero bloat.</p>
-                </div>
+                <h1>semtag</h1>
+                <p class="subtitle">Semantic versioning for Git,<br>done right.</p>
+                <p class="description">Auto-detects API changes to suggest the correct bump level. Supports Go multi-module workspaces. No frameworks, no bloat — stdlib only.</p>
             </div>
         </section>
 
-        <section id="demo" class="demo-section">
+        <section class="demo">
             <div class="container">
-                <pre class="terminal"><code><span class="t-prompt">$</span> semtag
-<span class="t-ok">●</span> on default branch (main)
-<span class="t-ok">●</span> no uncommitted changes
-<span class="t-ok">●</span> no remote changes
-<span class="t-ok">●</span> no unpushed changes
-<span class="t-ok">●</span> no new remote tags
-<span class="t-ok">●</span> bump tag v1.2.3 => v1.2.4
-<span class="t-ok">●</span> tag v1.2.4 created
-<span class="t-ok">●</span> tag v1.2.4 pushed</code></pre>
+                <pre class="terminal"><code><span class="prompt">$</span> semtag
+<span class="ok">●</span> on default branch (main)
+<span class="ok">●</span> no uncommitted changes
+<span class="ok">●</span> no remote changes
+<span class="ok">●</span> no unpushed changes
+<span class="ok">●</span> no new remote tags
+<span class="ok">●</span> detected: 1 breaking, 2 compatible → major bump
+<span class="ok">●</span> bump tag v1.2.3 => v2.0.0
+<span class="ok">●</span> tag v2.0.0 created
+<span class="ok">●</span> tag v2.0.0 pushed</code></pre>
             </div>
         </section>
 
@@ -63,17 +58,17 @@
             <div class="container">
                 <h2>Install</h2>
                 <div class="install-grid">
-                    <div class="install-item">
+                    <div class="install-method">
                         <h3>Homebrew</h3>
                         <pre class="code"><code>brew install flaticols/apps/semtag</code></pre>
                     </div>
-                    <div class="install-item">
+                    <div class="install-method">
                         <h3>Go</h3>
                         <pre class="code"><code>go install github.com/flaticols/bump@latest</code></pre>
                     </div>
-                    <div class="install-item">
+                    <div class="install-method">
                         <h3>Binary</h3>
-                        <p><a href="https://github.com/flaticols/bump/releases">Download from GitHub Releases</a></p>
+                        <p><a href="https://github.com/flaticols/bump/releases">GitHub Releases</a></p>
                     </div>
                 </div>
             </div>
@@ -82,50 +77,52 @@
         <section id="usage" class="section">
             <div class="container">
                 <h2>Usage</h2>
-
                 <div class="usage-grid">
-                    <div class="usage-item">
+                    <div class="usage-row">
                         <code>semtag</code>
-                        <span>Patch bump</span>
-                        <span class="dim">1.2.3 &rarr; 1.2.4</span>
+                        <span>Auto-detect bump level from API diff</span>
                     </div>
-                    <div class="usage-item">
+                    <div class="usage-row">
+                        <code>semtag patch</code>
+                        <span>Explicit patch bump &mdash; 1.2.3 &rarr; 1.2.4</span>
+                    </div>
+                    <div class="usage-row">
                         <code>semtag major</code>
-                        <span>Major bump</span>
-                        <span class="dim">1.2.3 &rarr; 2.0.0</span>
+                        <span>Major bump &mdash; 1.2.3 &rarr; 2.0.0</span>
                     </div>
-                    <div class="usage-item">
-                        <code>semtag minor</code>
-                        <span>Minor bump</span>
-                        <span class="dim">1.2.3 &rarr; 1.3.0</span>
-                    </div>
-                    <div class="usage-item">
+                    <div class="usage-row">
                         <code>semtag minor pkg/semver</code>
-                        <span>Multi-module bump</span>
-                        <span class="dim">pkg/semver/v1.0.0 &rarr; pkg/semver/v1.1.0</span>
+                        <span>Multi-module bump &mdash; pkg/semver/v1.0.0 &rarr; pkg/semver/v1.1.0</span>
                     </div>
-                    <div class="usage-item">
+                    <div class="usage-row">
+                        <code>semtag --dry-run</code>
+                        <span>Preview without creating or pushing tags</span>
+                    </div>
+                    <div class="usage-row">
                         <code>semtag undo</code>
-                        <span>Remove latest tag</span>
-                        <span class="dim">Interactive confirmation</span>
+                        <span>Remove latest tag with interactive confirmation</span>
                     </div>
-                    <div class="usage-item">
+                    <div class="usage-row">
                         <code>semtag diff v1.0.0</code>
-                        <span>API diff vs HEAD</span>
-                        <span class="dim">Suggests major/minor/patch</span>
+                        <span>Compare Go API surface against HEAD</span>
+                    </div>
+                    <div class="usage-row">
+                        <code>semtag --json patch</code>
+                        <span>Pure JSON output, no log messages</span>
                     </div>
                 </div>
 
                 <h3>Flags</h3>
-                <div class="flags-list">
-                    <div class="flag-item"><code>-r, --repo</code><span>Repository path</span></div>
-                    <div class="flag-item"><code>--prefix</code><span>Tag prefix for multi-module</span></div>
-                    <div class="flag-item"><code>-l, --local</code><span>Skip remote operations</span></div>
-                    <div class="flag-item"><code>-b, --brave</code><span>Skip checks and confirmations</span></div>
-                    <div class="flag-item"><code>--no-color</code><span>Disable colors</span></div>
-                    <div class="flag-item"><code>--no-tty</code><span>Disable interactive prompts</span></div>
-                    <div class="flag-item"><code>--json</code><span>JSON output to stdout</span></div>
-                    <div class="flag-item"><code>--verbose</code><span>Debug output</span></div>
+                <div class="flags">
+                    <div class="flag"><code>-n, --dry-run</code><span>Preview changes, skip tag creation</span></div>
+                    <div class="flag"><code>--json</code><span>Structured JSON only to stdout</span></div>
+                    <div class="flag"><code>--prefix</code><span>Tag prefix for multi-module repos</span></div>
+                    <div class="flag"><code>-r, --repo</code><span>Repository path</span></div>
+                    <div class="flag"><code>-l, --local</code><span>Skip remote operations</span></div>
+                    <div class="flag"><code>-b, --brave</code><span>Skip all checks and confirmations</span></div>
+                    <div class="flag"><code>--no-color</code><span>Disable colors</span></div>
+                    <div class="flag"><code>--no-tty</code><span>Disable interactive prompts</span></div>
+                    <div class="flag"><code>--verbose</code><span>Debug output</span></div>
                 </div>
             </div>
         </section>
@@ -135,36 +132,40 @@
                 <h2>Features</h2>
                 <div class="features-grid">
                     <div class="feature">
-                        <h3>Minimal</h3>
-                        <p>Built on Go stdlib with slog, flag, and os/exec. No cobra, no framework bloat.</p>
+                        <h3>Auto Bump Detection</h3>
+                        <p>Runs API diff against the last tag to determine if you need a major, minor, or patch bump. No arguments required.</p>
                     </div>
                     <div class="feature">
-                        <h3>Multi-Module</h3>
-                        <p>Native support for Go multi-module repos with prefix tags like <code>pkg/semver/v1.2.3</code>.</p>
+                        <h3>Workspace Detection</h3>
+                        <p>Reads go.work, verifies go.mod in each module, and prompts you to select which module to bump.</p>
                     </div>
                     <div class="feature">
                         <h3>API Diff</h3>
-                        <p>Compare Go API surfaces between versions. Suggests major/minor/patch based on breaking changes.</p>
+                        <p>Compares Go API surfaces between any two refs using temporary worktrees. Your working tree is never touched.</p>
                     </div>
                     <div class="feature">
-                        <h3>Safe Worktrees</h3>
-                        <p>API diffs run in temporary git worktrees. Your working directory is never touched.</p>
+                        <h3>Dry Run</h3>
+                        <p>Preview what would happen without creating or pushing tags. Combine with --json for scripted workflows.</p>
                     </div>
                     <div class="feature">
-                        <h3>Structured Logging</h3>
-                        <p>Powered by slog with a custom handler. Styled terminal output + JSON for CI/scripts.</p>
-                    </div>
-                    <div class="feature">
-                        <h3>TTY Aware</h3>
-                        <p>Auto-detects terminal capabilities. Colors, spinners, and prompts adapt or degrade gracefully.</p>
+                        <h3>JSON Output</h3>
+                        <p>Clean structured JSON to stdout. No log messages, no styled output — just data for pipes and scripts.</p>
                     </div>
                     <div class="feature">
                         <h3>Pre-flight Checks</h3>
-                        <p>Validates branch, uncommitted changes, remote sync, and unfetched tags before any operation.</p>
+                        <p>Validates branch, uncommitted changes, remote sync, and unfetched tags before any tag operation.</p>
                     </div>
                     <div class="feature">
-                        <h3>Brave Mode</h3>
-                        <p>Skip all checks and prompts for CI/automation with a single <code>--brave</code> flag.</p>
+                        <h3>Multi-Module</h3>
+                        <p>Prefix tags like pkg/semver/v1.2.3 for Go monorepos. Specify via flag, positional arg, or let it auto-detect.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>TTY Aware</h3>
+                        <p>Detects terminal capabilities at startup. Colors, spinners, and prompts degrade gracefully to plain text.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>Minimal</h3>
+                        <p>Go stdlib only: slog, flag, os/exec. No cobra, no viper, no framework dependencies.</p>
                     </div>
                 </div>
             </div>
@@ -175,22 +176,9 @@
                 <h2>Examples</h2>
 
                 <div class="example">
-                    <h3>Multi-Module Repo</h3>
-                    <pre class="terminal"><code><span class="t-prompt">$</span> semtag minor pkg/semver
-<span class="t-ok">●</span> on default branch (main)
-<span class="t-ok">●</span> no uncommitted changes
-<span class="t-ok">●</span> no remote changes
-<span class="t-ok">●</span> no unpushed changes
-<span class="t-ok">●</span> no new remote tags
-<span class="t-ok">●</span> bump tag pkg/semver/v1.0.0 => pkg/semver/v1.1.0
-<span class="t-ok">●</span> tag pkg/semver/v1.1.0 created
-<span class="t-ok">●</span> tag pkg/semver/v1.1.0 pushed</code></pre>
-                </div>
-
-                <div class="example">
                     <h3>API Diff</h3>
-                    <pre class="terminal"><code><span class="t-prompt">$</span> semtag diff v0.0.6 v0.0.7
-<span class="t-ok">●</span> comparing API: v0.0.6 -> v0.0.7
+                    <pre class="terminal"><code><span class="prompt">$</span> semtag diff v0.0.6 v0.0.7
+<span class="ok">●</span> comparing API: v0.0.6 -> v0.0.7
 
 github.com/flaticols/bump/semver
   Incompatible changes:
@@ -199,46 +187,57 @@ github.com/flaticols/bump/semver
     + added: ExpandPartialVersion
     + added: ParseConstraintSet
 
-<span class="t-ok">●</span> summary: 1 breaking, 2 compatible
-<span class="t-ok">●</span> suggested bump: major</code></pre>
+<span class="ok">●</span> summary: 1 breaking, 2 compatible
+<span class="ok">●</span> suggested bump: major</code></pre>
                 </div>
 
                 <div class="example">
-                    <h3>JSON Output for CI</h3>
-                    <pre class="terminal"><code><span class="t-prompt">$</span> semtag --json --brave 2>/dev/null | jq
-{
-  "time": "2025-03-29T10:15:30Z",
-  "level": "INFO",
-  "msg": "bump tag v1.2.3 => v1.2.4"
-}
-{
-  "time": "2025-03-29T10:15:30Z",
-  "level": "INFO",
-  "msg": "tag v1.2.4 created"
-}</code></pre>
+                    <h3>JSON Output</h3>
+                    <pre class="terminal"><code><span class="prompt">$</span> semtag --json --brave patch
+{"previous":"v1.2.3","version":"v1.2.4","pushed":true,"dry_run":false}</code></pre>
+                    <pre class="terminal"><code><span class="prompt">$</span> semtag --json --dry-run --brave
+{"previous":"v1.2.3","version":"v2.0.0","pushed":false,"dry_run":true}</code></pre>
+                </div>
+
+                <div class="example">
+                    <h3>Multi-Module Workspace</h3>
+                    <pre class="terminal"><code><span class="prompt">$</span> semtag minor pkg/semver
+<span class="ok">●</span> on default branch (main)
+<span class="ok">●</span> no uncommitted changes
+<span class="ok">●</span> no remote changes
+<span class="ok">●</span> bump tag pkg/semver/v1.0.0 => pkg/semver/v1.1.0
+<span class="ok">●</span> tag pkg/semver/v1.1.0 created
+<span class="ok">●</span> tag pkg/semver/v1.1.0 pushed</code></pre>
+                </div>
+
+                <div class="example">
+                    <h3>Dry Run</h3>
+                    <pre class="terminal"><code><span class="prompt">$</span> semtag --dry-run
+<span class="ok">●</span> on default branch (main)
+<span class="ok">●</span> no uncommitted changes
+<span class="ok">●</span> detected: 1 breaking → major bump
+<span class="ok">●</span> bump tag v1.2.3 => v2.0.0
+<span class="ok">●</span> dry-run: would create tag v2.0.0</code></pre>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer class="site-footer">
+    <footer>
         <div class="container">
             <p>semtag &copy; 2025 <a href="https://github.com/flaticols">Denis Panfilov</a> &middot; MIT License</p>
         </div>
     </footer>
 
     <script>
-        const header = document.querySelector('.site-header');
-        window.addEventListener('scroll', () => {
-            header.classList.toggle('scrolled', window.pageYOffset > 80);
-        });
+        const hdr = document.querySelector('.site-header');
+        addEventListener('scroll', () => hdr.classList.toggle('scrolled', scrollY > 80));
         document.querySelectorAll('a[href^="#"]').forEach(a => {
             a.addEventListener('click', e => {
-                const href = a.getAttribute('href');
-                if (href === '#') return;
+                const t = document.querySelector(a.getAttribute('href'));
+                if (!t) return;
                 e.preventDefault();
-                const t = document.querySelector(href);
-                if (t) window.scrollTo({ top: t.offsetTop - 64, behavior: 'smooth' });
+                scrollTo({ top: t.offsetTop - 64, behavior: 'smooth' });
             });
         });
     </script>
