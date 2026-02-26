@@ -25,6 +25,7 @@ type Config struct {
 	NoColor bool
 	NoTTY   bool
 	JSON    bool
+	DryRun  bool
 
 	// Derived
 	Interactive bool
@@ -98,6 +99,8 @@ func parseFlags() *Config {
 	flag.BoolVar(&cfg.NoColor, "no-color", false, "disable colored output")
 	flag.BoolVar(&cfg.NoTTY, "no-tty", false, "disable interactive prompts")
 	flag.BoolVar(&cfg.JSON, "json", false, "output JSON to stdout")
+	flag.BoolVar(&cfg.DryRun, "dry-run", false, "show what would happen without creating or pushing tags")
+	flag.BoolVar(&cfg.DryRun, "n", false, "show what would happen (shorthand)")
 
 	flag.Usage = printUsage
 	flag.Parse()
@@ -148,7 +151,7 @@ Usage:
 Commands:
   major        Bump major version (1.2.3 -> 2.0.0)
   minor        Bump minor version (1.2.3 -> 1.3.0)
-  patch        Bump patch version (1.2.3 -> 1.2.4) [default]
+  patch        Bump patch version (1.2.3 -> 1.2.4)
   undo         Remove the latest semver tag
   diff         Compare Go API changes between refs
   version      Print version
@@ -159,11 +162,13 @@ Flags:
 	flag.PrintDefaults()
 	fmt.Fprint(os.Stderr, `
 Examples:
-  semtag                           Bump patch version
+  semtag                           Auto-detect bump level via API diff
+  semtag patch                     Bump patch version
   semtag major                     Bump major version
   semtag minor pkg/semver          Bump minor for pkg/semver module
   semtag --prefix pkg/x patch      Bump patch for pkg/x
-  semtag --local                   Bump patch, skip remote
+  semtag --local                   Bump and skip remote push
+  semtag --dry-run                 Show what would happen, no tags created
   semtag undo                      Remove latest tag
   semtag undo --brave              Remove latest tag without confirmation
   semtag diff v1.0.0 v1.1.0       Compare Go API between two refs

@@ -9,7 +9,9 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/flaticols/bump/internal/apidiff"
 	"github.com/flaticols/bump/internal/git"
+	"github.com/flaticols/bump/internal/gomod"
 	"github.com/flaticols/bump/internal/tui"
 	semver "github.com/flaticols/server"
 )
@@ -28,6 +30,13 @@ func runBump(cfg *Config, args []string) error {
 	incPart := getIncPart(args)
 	cfg.Prefix = normalizePrefix(getPackageName(args), cfg.Prefix)
 
+	// Auto-detect workspace module when no prefix specified.
+	if cfg.Prefix == "" {
+		if err := detectWorkspacePrefix(cfg); err != nil {
+			return err
+		}
+	}
+
 	if err := gitStateChecks(cfg); err != nil {
 		return err
 	}
@@ -35,6 +44,11 @@ func runBump(cfg *Config, args []string) error {
 	ver, noTags, err := currentVersion(cfg)
 	if err != nil {
 		return err
+	}
+
+	// Auto-detect bump level via API diff when not specified.
+	if incPart == "" {
+		incPart = detectBumpLevel(cfg, ver, noTags)
 	}
 
 	nextVer := incrementVersion(incPart, ver)
@@ -46,6 +60,11 @@ func runBump(cfg *Config, args []string) error {
 	} else {
 		oldTag = formatTag(ver.Stringv(), cfg.Prefix)
 		slog.Info(fmt.Sprintf("bump tag %s => %s", oldTag, newTag))
+	}
+
+	if cfg.DryRun {
+		slog.Info(fmt.Sprintf("dry-run: would create tag %s", newTag))
+		return emitJSON(cfg, oldTag, newTag, false)
 	}
 
 	if err := git.CreateTag(newTag); err != nil {
@@ -66,18 +85,57 @@ func runBump(cfg *Config, args []string) error {
 		pushed = true
 	}
 
-	if cfg.JSON {
-		result := map[string]any{
-			"version": newTag,
-			"pushed":  pushed,
-		}
-		if oldTag != "" {
-			result["previous"] = oldTag
-		}
-		json.NewEncoder(os.Stdout).Encode(result)
+	return emitJSON(cfg, oldTag, newTag, pushed)
+}
+
+func detectWorkspacePrefix(cfg *Config) error {
+	modules, err := gomod.Modules()
+	if err != nil || len(modules) == 0 {
+		return err
 	}
 
+	if cfg.JSON {
+		return fmt.Errorf("multi-module workspace detected; specify --prefix from: %v", modules)
+	}
+
+	selected, err := tui.Select("Select module:", modules, cfg.Interactive)
+	if err != nil {
+		return err
+	}
+	if selected != "." {
+		cfg.Prefix = normalizePrefix(selected, "")
+	}
 	return nil
+}
+
+func detectBumpLevel(cfg *Config, ver semver.Version, noTags bool) semVerPart {
+	if noTags {
+		return patch
+	}
+	oldTag := formatTag(ver.Stringv(), cfg.Prefix)
+	report, err := apidiff.Compare(oldTag, "HEAD")
+	if err != nil {
+		slog.Warn(fmt.Sprintf("api diff failed, defaulting to patch: %s", err))
+		return patch
+	}
+	suggested := report.SuggestedBump()
+	slog.Info(fmt.Sprintf("detected: %s → %s bump", report.Summary(), suggested))
+	return semVerPart(suggested)
+}
+
+func emitJSON(cfg *Config, oldTag, newTag string, pushed bool) error {
+	if !cfg.JSON {
+		return nil
+	}
+	result := map[string]any{
+		"version": newTag,
+		"pushed":  pushed,
+		"dry_run": cfg.DryRun,
+	}
+	if oldTag != "" {
+		result["previous"] = oldTag
+	}
+	return json.NewEncoder(os.Stdout).Encode(result)
 }
 
 func currentVersion(cfg *Config) (semver.Version, bool, error) {
@@ -209,7 +267,7 @@ func getIncPart(args []string) semVerPart {
 			return args[0]
 		}
 	}
-	return patch
+	return "" // auto-detect via API diff
 }
 
 func getPackageName(args []string) string {
