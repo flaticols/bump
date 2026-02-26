@@ -117,7 +117,7 @@ func setupLogger(cfg *Config) {
 
 	if cfg.JSON {
 		jsonHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level})
-		slog.SetDefault(slog.New(ilog.NewMultiHandler(styledHandler, jsonHandler)))
+		slog.SetDefault(slog.New(slog.NewMultiHandler(styledHandler, jsonHandler)))
 	} else {
 		slog.SetDefault(slog.New(styledHandler))
 	}

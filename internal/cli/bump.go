@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"slices"
 	"strings"
 
@@ -51,7 +52,7 @@ func runBump(cfg *Config, args []string) error {
 	slog.Info(fmt.Sprintf("tag %s created", newTag))
 
 	if !cfg.Local {
-		sp := tui.NewSpinner(nil, "pushing tag...", cfg.Interactive)
+		sp := tui.NewSpinner(os.Stderr, "pushing tag...", cfg.Interactive)
 		sp.Start()
 		err := git.PushTag(newTag)
 		sp.Stop()

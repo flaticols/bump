@@ -1,6 +1,6 @@
 module github.com/flaticols/bump
 
-go 1.24.0
+go 1.26.0
 
 require (
 	github.com/charmbracelet/huh v0.6.0
@@ -39,5 +39,3 @@ require (
 	golang.org/x/text v0.18.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/flaticols/server => ./pkg/server
