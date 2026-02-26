@@ -1,9 +1,7 @@
 package main
 
-import (
-	"github.com/flaticols/bump/internal/cmd"
-)
+import "github.com/flaticols/bump/internal/cli"
 
 func main() {
-	cmd.Run()
+	cli.Run()
 }

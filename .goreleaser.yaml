@@ -1,7 +1,10 @@
 version: 2
 
+project_name: semtag
+
 builds:
-  - env:
+  - binary: semtag
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -25,14 +28,14 @@ archives:
 
 brews:
   -
-    name: bump
+    name: semtag
     url_template: "https://github.com/flaticols/bump/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     commit_author:
       name: Denis Panfilov
       email: gh@flaticols.dev
     directory: Formula
-    homepage: "https://bump.flaticols.dev"
-    description: "Bump semver git tag in yours repository"
+    homepage: "https://semtag.flaticols.dev"
+    description: "Semantic versioning for Git with API diff support"
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
     license: "MIT"
     repository:

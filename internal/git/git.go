@@ -1,3 +1,5 @@
+// Package git provides wrappers around git CLI commands for tag management,
+// branch detection, and repository state checks.
 package git
 
 import (
@@ -6,157 +8,147 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/flaticols/bump/semver"
+	semver "github.com/flaticols/server"
 )
 
 const DefaultVersion = "0.0.1"
 
-type (
-	SemVerTagError struct {
-		Tag    string
-		Msg    string
-		NoTags bool
-	}
-)
+// SemVerTagError is returned when a tag cannot be parsed as semver.
+type SemVerTagError struct {
+	Tag    string
+	Msg    string
+	NoTags bool
+}
 
 func (e SemVerTagError) Error() string {
 	if e.Msg != "" {
-		return fmt.Sprintf("error parsing semver tag: '%s': %s", e.Tag, e.Msg)
+		return fmt.Sprintf("invalid semver tag '%s': %s", e.Tag, e.Msg)
 	}
-	return fmt.Sprintf("error parsing semver tag: '%s'", e.Tag)
+	return fmt.Sprintf("invalid semver tag '%s'", e.Tag)
 }
 
-// CmdCurrentBranch returns the name of the current Git branch
-func CmdCurrentBranch() (string, error) {
-	return getCurrentBranch()
-}
-
-// getCurrentBranch gets the current branch name with fallback
-func getCurrentBranch() (string, error) {
-	// Try rev-parse first (works for most cases)
-	if branch, err := runGitCommand("rev-parse", "--abbrev-ref", "HEAD"); err == nil {
-		return strings.TrimSpace(branch), nil
-	}
-
-	// Fallback to symbolic-ref (works for repos without commits)
-	branch, err := runGitCommand("symbolic-ref", "HEAD")
-	if err != nil {
-		return "", fmt.Errorf("failed to get current branch: %w", err)
-	}
-
-	// Remove refs/heads/ prefix
-	return strings.TrimPrefix(strings.TrimSpace(branch), "refs/heads/"), nil
-}
-
-// runGitCommand executes a git command and returns its output
-func runGitCommand(args ...string) (string, error) {
+// run executes a git command and returns trimmed stdout.
+func run(args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
-	output, err := cmd.Output()
+	out, err := cmd.Output()
 	if err != nil {
 		return "", err
 	}
-	return string(output), nil
+	return strings.TrimSpace(string(out)), nil
 }
 
-// CmdHasLocalChanges checks for uncommitted changes in the local repository
-func CmdHasLocalChanges() (bool, error) {
-	output, err := runGitCommand("status", "--porcelain")
-	if err != nil {
-		return false, fmt.Errorf("failed to execute git command: %w", err)
+// runCombined executes a git command and returns combined stdout+stderr.
+func runCombined(args ...string) (string, error) {
+	cmd := exec.Command("git", args...)
+	out, err := cmd.CombinedOutput()
+	return string(out), err
+}
+
+// CurrentBranch returns the name of the current git branch.
+func CurrentBranch() (string, error) {
+	if branch, err := run("rev-parse", "--abbrev-ref", "HEAD"); err == nil {
+		return branch, nil
 	}
-	return strings.TrimSpace(output) != "", nil
+	// Fallback for repos without commits
+	branch, err := run("symbolic-ref", "HEAD")
+	if err != nil {
+		return "", fmt.Errorf("failed to get current branch: %w", err)
+	}
+	return strings.TrimPrefix(branch, "refs/heads/"), nil
 }
 
-// hasRemote checks if the repository has any remote configured
-func hasRemote() (bool, error) {
-	output, err := runGitCommand("remote")
+// HasLocalChanges returns true if there are uncommitted changes.
+func HasLocalChanges() (bool, error) {
+	out, err := run("status", "--porcelain")
+	if err != nil {
+		return false, fmt.Errorf("git status: %w", err)
+	}
+	return out != "", nil
+}
+
+// HasRemote returns true if the repository has at least one remote.
+func HasRemote() (bool, error) {
+	out, err := run("remote")
 	if err != nil {
 		return false, err
 	}
-	return strings.TrimSpace(output) != "", nil
+	return out != "", nil
 }
 
-// CmdHasRemoteChanges checks if there are remote changes that need to be pulled
-func CmdHasRemoteChanges() (bool, error) {
-	if ok, _ := hasRemote(); !ok {
-		return false, fmt.Errorf("no remotes found in repository")
+// HasRemoteChanges checks if origin has commits ahead of HEAD.
+func HasRemoteChanges() (bool, error) {
+	if ok, _ := HasRemote(); !ok {
+		return false, fmt.Errorf("no remotes found")
 	}
 
-	// Fetch latest changes
 	cmd := exec.Command("git", "fetch", "origin")
 	if err := cmd.Run(); err != nil {
-		return false, fmt.Errorf("failed to fetch from remote: %w", err)
+		return false, fmt.Errorf("fetch origin: %w", err)
 	}
 
-	// Get current branch
-	currentBranch, err := getCurrentBranch()
+	branch, err := CurrentBranch()
 	if err != nil {
 		return false, err
 	}
 
-	// Check for remote changes (try origin/main first, then current branch)
-	for _, remoteBranch := range []string{"origin/main", fmt.Sprintf("origin/%s", currentBranch)} {
-		output, err := runGitCommand("log", fmt.Sprintf("HEAD..%s", remoteBranch), "--oneline")
+	for _, remote := range []string{"origin/main", fmt.Sprintf("origin/%s", branch)} {
+		out, err := run("log", fmt.Sprintf("HEAD..%s", remote), "--oneline")
 		if err == nil {
-			return strings.TrimSpace(output) != "", nil
+			return out != "", nil
 		}
 	}
 
 	return false, fmt.Errorf("failed to check remote changes")
 }
 
-// CmdHasUnpushedChanges checks if there are unpushed commits on the given branch
-func CmdHasUnpushedChanges(branch string) (bool, error) {
-	if ok, _ := hasRemote(); !ok {
+// HasUnpushedChanges checks if the branch has commits not on the remote.
+func HasUnpushedChanges(branch string) (bool, error) {
+	if ok, _ := HasRemote(); !ok {
 		return false, nil
 	}
 
-	// Try to count commits ahead of remote
-	output, err := runGitCommand("rev-list", "--count", fmt.Sprintf("origin/%s..%s", branch, branch))
+	out, err := run("rev-list", "--count", fmt.Sprintf("origin/%s..%s", branch, branch))
 	if err == nil {
-		return strings.TrimSpace(output) != "0", nil
+		return out != "0", nil
 	}
 
-	// If remote branch doesn't exist, check if we have local commits
-	remoteBranchOutput, _ := runGitCommand("ls-remote", "--heads", "origin", branch)
-	if strings.TrimSpace(remoteBranchOutput) == "" {
-		localCount, err := runGitCommand("rev-list", "--count", branch)
+	// Remote branch might not exist yet
+	remoteOut, _ := run("ls-remote", "--heads", "origin", branch)
+	if remoteOut == "" {
+		local, err := run("rev-list", "--count", branch)
 		if err != nil {
-			return false, fmt.Errorf("failed to check local commits: %w", err)
+			return false, fmt.Errorf("check local commits: %w", err)
 		}
-		return strings.TrimSpace(localCount) != "0", nil
+		return local != "0", nil
 	}
 
-	return false, fmt.Errorf("failed to check unpushed changes: %w", err)
+	return false, fmt.Errorf("check unpushed changes: %w", err)
 }
 
-// CmdHasRemoteUnfetchedTags checks if there are unfetched tags in the remote repository
-func CmdHasRemoteUnfetchedTags() (bool, error) {
-	if ok, _ := hasRemote(); !ok {
-		return false, fmt.Errorf("no remotes found in repository")
+// HasUnfetchedTags returns true if the remote has tags not present locally.
+func HasUnfetchedTags() (bool, error) {
+	if ok, _ := HasRemote(); !ok {
+		return false, fmt.Errorf("no remotes found")
 	}
 
-	// Get local tags
-	localTagsOutput, err := runGitCommand("tag")
+	localOut, err := run("tag")
 	if err != nil {
-		return false, fmt.Errorf("failed to get local tags: %w", err)
+		return false, fmt.Errorf("list local tags: %w", err)
 	}
 
-	localTagSet := make(map[string]bool)
-	for _, tag := range strings.Split(strings.TrimSpace(localTagsOutput), "\n") {
+	localTags := make(map[string]bool)
+	for _, tag := range strings.Split(localOut, "\n") {
 		if tag != "" {
-			localTagSet[tag] = true
+			localTags[tag] = true
 		}
 	}
 
-	// Get remote tags
-	remoteOutput, err := runGitCommand("ls-remote", "--tags", "origin")
+	remoteOut, err := run("ls-remote", "--tags", "origin")
 	if err != nil {
-		return false, fmt.Errorf("failed to list remote tags: %w", err)
+		return false, fmt.Errorf("list remote tags: %w", err)
 	}
 
-	// Check for unfetched tags
-	for _, line := range strings.Split(strings.TrimSpace(remoteOutput), "\n") {
+	for _, line := range strings.Split(remoteOut, "\n") {
 		if line == "" {
 			continue
 		}
@@ -164,8 +156,8 @@ func CmdHasRemoteUnfetchedTags() (bool, error) {
 		if len(parts) < 2 || strings.Contains(parts[1], "^{}") {
 			continue
 		}
-		tagName := strings.TrimPrefix(parts[1], "refs/tags/")
-		if !localTagSet[tagName] {
+		tag := strings.TrimPrefix(parts[1], "refs/tags/")
+		if !localTags[tag] {
 			return true, nil
 		}
 	}
@@ -173,35 +165,41 @@ func CmdHasRemoteUnfetchedTags() (bool, error) {
 	return false, nil
 }
 
-// CmdGetTag retrieves the latest semver tag from the repository.
-// Tags are grouped by creation timestamp, and the highest semver tag from the most
-// recent group is returned. An optional prefix can filter tags (e.g., "pkg/x/").
-func CmdGetTag(prefix string) (semver.Version, error) {
-	cmd := exec.Command("git", "for-each-ref", "--sort=-creatordate", "--format=%(refname:short) %(creatordate:iso-strict)", "refs/tags")
-	output, err := cmd.CombinedOutput()
+// FetchTags fetches all tags from origin.
+func FetchTags() error {
+	cmd := exec.Command("git", "fetch", "--tags")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("fetch tags: %s: %w", string(out), err)
+	}
+	return nil
+}
+
+// LatestTag retrieves the latest semver tag, optionally filtered by prefix.
+// Tags are grouped by creation timestamp; the highest semver from the most recent group wins.
+func LatestTag(prefix string) (semver.Version, error) {
+	out, err := runCombined("for-each-ref", "--sort=-creatordate",
+		"--format=%(refname:short) %(creatordate:iso-strict)", "refs/tags")
 	if err != nil {
-		errOutput := string(output)
-		if strings.Contains(errOutput, "No names found") ||
-			strings.Contains(errOutput, "No tags") ||
-			strings.Contains(errOutput, "fatal: No names found") {
+		trimmed := strings.TrimSpace(out)
+		if strings.Contains(trimmed, "No names found") || strings.Contains(trimmed, "No tags") {
 			return semver.Version{}, SemVerTagError{NoTags: true}
 		}
-		return semver.Version{}, fmt.Errorf("error getting git tags: %v - %s", err, string(output))
+		return semver.Version{}, fmt.Errorf("list tags: %v - %s", err, trimmed)
 	}
 
-	trimmedOutput := strings.TrimSpace(string(output))
-	if len(trimmedOutput) == 0 {
+	trimmed := strings.TrimSpace(out)
+	if trimmed == "" {
 		return semver.Version{}, SemVerTagError{NoTags: true, Msg: "no tags found"}
 	}
 
-	lines := strings.Split(trimmedOutput, "\n")
+	lines := strings.Split(trimmed, "\n")
 
-	// Iterate over groups of same timestamp, return first group that has a valid tag for the given prefix
-	var currentTimestamp string
-	var groupTags []string
-	flushGroup := func() (semver.Version, bool) {
-		var validVersions []semver.Version
-		for _, tag := range groupTags {
+	var currentTS string
+	var group []string
+
+	flush := func() (semver.Version, bool) {
+		var valid []semver.Version
+		for _, tag := range group {
 			candidate := tag
 			if prefix != "" {
 				if !strings.HasPrefix(candidate, prefix) {
@@ -209,17 +207,17 @@ func CmdGetTag(prefix string) (semver.Version, error) {
 				}
 				candidate = strings.TrimPrefix(candidate, prefix)
 			}
-			if ver, ok := semver.IsValid(candidate); ok {
-				validVersions = append(validVersions, ver)
+			if v, ok := semver.IsValid(candidate); ok {
+				valid = append(valid, v)
 			}
 		}
-		if len(validVersions) == 0 {
+		if len(valid) == 0 {
 			return semver.Version{}, false
 		}
-		sort.Slice(validVersions, func(i, j int) bool {
-			return semver.Compare(validVersions[i], validVersions[j]) > 0
+		sort.Slice(valid, func(i, j int) bool {
+			return semver.Compare(valid[i], valid[j]) > 0
 		})
-		return validVersions[0], true
+		return valid[0], true
 	}
 
 	for _, line := range lines {
@@ -227,70 +225,63 @@ func CmdGetTag(prefix string) (semver.Version, error) {
 		if len(parts) != 2 {
 			continue
 		}
-		tag := parts[0]
-		timestamp := parts[1]
-		if currentTimestamp == "" {
-			currentTimestamp = timestamp
-			groupTags = []string{tag}
+		tag, ts := parts[0], parts[1]
+
+		if currentTS == "" {
+			currentTS = ts
+			group = []string{tag}
 			continue
 		}
-		if timestamp == currentTimestamp {
-			groupTags = append(groupTags, tag)
+		if ts == currentTS {
+			group = append(group, tag)
 			continue
 		}
-		// new timestamp encountered: process previous group
-		if ver, ok := flushGroup(); ok {
-			return ver, nil
+		if v, ok := flush(); ok {
+			return v, nil
 		}
-		// reset for new group
-		currentTimestamp = timestamp
-		groupTags = []string{tag}
-	}
-	// process last group
-	if ver, ok := flushGroup(); ok {
-		return ver, nil
+		currentTS = ts
+		group = []string{tag}
 	}
 
-	// No tags found for the given prefix
-	return semver.Version{}, SemVerTagError{NoTags: true, Msg: "no tags found for the given prefix"}
+	if v, ok := flush(); ok {
+		return v, nil
+	}
+
+	return semver.Version{}, SemVerTagError{NoTags: true, Msg: "no tags found for prefix"}
 }
 
-// CmdCreateTag creates a new Git tag with the specified name
-func CmdCreateTag(tag string) error {
-	cmd := exec.Command("git", "tag", tag)
-	output, err := cmd.CombinedOutput()
+// CreateTag creates a local git tag.
+func CreateTag(tag string) error {
+	out, err := runCombined("tag", tag)
 	if err != nil {
-		return fmt.Errorf("error setting git tag: %v - %s", err, string(output))
+		return fmt.Errorf("create tag: %s: %w", strings.TrimSpace(out), err)
 	}
 	return nil
 }
 
-// CmdPushTag pushes the specified Git tag to the origin remote repository
-func CmdPushTag(tag string) error {
-	cmd := exec.Command("git", "push", "origin", tag)
-	output, err := cmd.CombinedOutput()
+// PushTag pushes a tag to origin.
+func PushTag(tag string) error {
+	out, err := runCombined("push", "origin", tag)
 	if err != nil {
-		return fmt.Errorf("error pushing git tag: %v - %s", err, string(output))
+		return fmt.Errorf("push tag: %s: %w", strings.TrimSpace(out), err)
 	}
 	return nil
 }
 
-// CmdRemoveTag removes a git tag from the local repository
-func CmdRemoveTag(tag string) error {
-	cmd := exec.Command("git", "tag", "-d", tag)
-	output, err := cmd.CombinedOutput()
+// RemoveTag deletes a local tag.
+func RemoveTag(tag string) error {
+	out, err := runCombined("tag", "-d", tag)
 	if err != nil {
-		return fmt.Errorf("error removing local git tag: %v - %s", err, string(output))
+		return fmt.Errorf("remove local tag: %s: %w", strings.TrimSpace(out), err)
 	}
 	return nil
 }
 
-// CmdRemoveRemoteTag deletes a git tag from the remote repository
-func CmdRemoveRemoteTag(tag string) error {
-	cmd := exec.Command("git", "push", "--delete", "origin", tag)
-	output, err := cmd.CombinedOutput()
+// RemoveRemoteTag deletes a tag from origin.
+func RemoveRemoteTag(tag string) error {
+	out, err := runCombined("push", "--delete", "origin", tag)
 	if err != nil {
-		return fmt.Errorf("error removing remote git tag: %v - %s", err, string(output))
+		return fmt.Errorf("remove remote tag: %s: %w", strings.TrimSpace(out), err)
 	}
 	return nil
 }

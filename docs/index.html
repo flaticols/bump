@@ -6,15 +6,12 @@
     <meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
 
-    <!-- iOS Safari -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="bump" />
-    <link rel="apple-touch-icon" href="bump-small.png" />
+    <meta name="apple-mobile-web-app-title" content="semtag" />
 
-    <title>bump - Semantic Versioning for Git</title>
+    <title>semtag - Semantic Versioning for Git</title>
 
-    <!-- Variable Fonts: Recursive and Rec Mono Duotone -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Recursive:wght,CASL,MONO@300..1000,0..1,0..1&family=Rec+Mono+Duotone:wght@300..1000&display=swap" rel="stylesheet">
@@ -25,15 +22,12 @@
     <header class="site-header">
         <div class="container">
             <div class="header-content">
-                <a href="#" class="logo-link">
-                    <img src="bump-small.png" alt="bump" class="logo" />
-                </a>
+                <a href="#" class="logo-link">semtag</a>
                 <nav class="nav">
                     <a href="#install">Install</a>
                     <a href="#usage">Usage</a>
                     <a href="#features">Features</a>
                     <a href="#examples">Examples</a>
-                    <a href="#changelog">Changelog</a>
                     <a href="https://github.com/flaticols/bump" target="_blank" rel="noopener">GitHub</a>
                 </nav>
             </div>
@@ -44,48 +38,42 @@
         <section id="hero" class="hero">
             <div class="container">
                 <div class="hero-content">
-                    <h1 class="hero-title">bump</h1>
-                    <p class="hero-subtitle">Semantic versioning for Git, simplified.</p>
-                    <div class="hero-description">
-                        <p>A lightweight CLI tool that automates version increments following SemVer standards. Manage your project versions with confidence.</p>
-                    </div>
+                    <h1 class="hero-title">semtag</h1>
+                    <p class="hero-subtitle">Semantic versioning for Git, done right.</p>
+                    <p class="hero-description">A minimal CLI tool that bumps semver tags, detects API changes, and supports multi-module Go repositories. Built with Go stdlib and zero bloat.</p>
                 </div>
             </div>
         </section>
 
         <section id="demo" class="demo-section">
             <div class="container">
-                <pre class="terminal-output"><code>$ bump
-● on default branch: main
-● no uncommitted changes
-● no remote changes
-● no unpushed changes
-● no new remote tags
-● bump tag v1.2.3 → v1.2.4
-● tag v1.2.4 created
-● tag v1.2.4 pushed</code></pre>
+                <pre class="terminal"><code><span class="t-prompt">$</span> semtag
+<span class="t-ok">●</span> on default branch (main)
+<span class="t-ok">●</span> no uncommitted changes
+<span class="t-ok">●</span> no remote changes
+<span class="t-ok">●</span> no unpushed changes
+<span class="t-ok">●</span> no new remote tags
+<span class="t-ok">●</span> bump tag v1.2.3 => v1.2.4
+<span class="t-ok">●</span> tag v1.2.4 created
+<span class="t-ok">●</span> tag v1.2.4 pushed</code></pre>
             </div>
         </section>
 
         <section id="install" class="section">
             <div class="container">
-                <h2 class="section-title">Installation</h2>
-
-                <div class="install-list">
-                    <div class="install-method">
-                        <h3 class="method-title">Homebrew</h3>
-                        <pre class="code-block"><code>brew tap flaticols/apps
-brew install flaticols/apps/bump</code></pre>
+                <h2>Install</h2>
+                <div class="install-grid">
+                    <div class="install-item">
+                        <h3>Homebrew</h3>
+                        <pre class="code"><code>brew install flaticols/apps/semtag</code></pre>
                     </div>
-
-                    <div class="install-method">
-                        <h3 class="method-title">Go</h3>
-                        <pre class="code-block"><code>go install github.com/flaticols/bump@latest</code></pre>
+                    <div class="install-item">
+                        <h3>Go</h3>
+                        <pre class="code"><code>go install github.com/flaticols/bump@latest</code></pre>
                     </div>
-
-                    <div class="install-method">
-                        <h3 class="method-title">Binary</h3>
-                        <p><a href="https://github.com/flaticols/bump/releases" target="_blank" rel="noopener">Download latest release from GitHub</a></p>
+                    <div class="install-item">
+                        <h3>Binary</h3>
+                        <p><a href="https://github.com/flaticols/bump/releases">Download from GitHub Releases</a></p>
                     </div>
                 </div>
             </div>
@@ -93,117 +81,90 @@ brew install flaticols/apps/bump</code></pre>
 
         <section id="usage" class="section">
             <div class="container">
-                <h2 class="section-title">Usage</h2>
+                <h2>Usage</h2>
 
-                <p class="section-intro">Bump follows semantic versioning principles, allowing you to easily increment major, minor, or patch versions.</p>
-
-                <div class="usage-list">
+                <div class="usage-grid">
                     <div class="usage-item">
-                        <code class="usage-command">bump</code>
-                        <p class="usage-description">Bumps patch version</p>
-                        <p class="usage-example">1.2.3 → 1.2.4</p>
+                        <code>semtag</code>
+                        <span>Patch bump</span>
+                        <span class="dim">1.2.3 &rarr; 1.2.4</span>
                     </div>
-
                     <div class="usage-item">
-                        <code class="usage-command">bump major</code>
-                        <p class="usage-description">Bumps major version</p>
-                        <p class="usage-example">1.2.3 → 2.0.0</p>
+                        <code>semtag major</code>
+                        <span>Major bump</span>
+                        <span class="dim">1.2.3 &rarr; 2.0.0</span>
                     </div>
-
                     <div class="usage-item">
-                        <code class="usage-command">bump minor</code>
-                        <p class="usage-description">Bumps minor version</p>
-                        <p class="usage-example">1.2.3 → 1.3.0</p>
+                        <code>semtag minor</code>
+                        <span>Minor bump</span>
+                        <span class="dim">1.2.3 &rarr; 1.3.0</span>
                     </div>
-
                     <div class="usage-item">
-                        <code class="usage-command">bump patch</code>
-                        <p class="usage-description">Bumps patch version</p>
-                        <p class="usage-example">1.2.3 → 1.2.4</p>
+                        <code>semtag minor pkg/semver</code>
+                        <span>Multi-module bump</span>
+                        <span class="dim">pkg/semver/v1.0.0 &rarr; pkg/semver/v1.1.0</span>
                     </div>
-
                     <div class="usage-item">
-                        <code class="usage-command">bump undo</code>
-                        <p class="usage-description">Removes the last version tag</p>
-                        <p class="usage-example">v1.2.4 → v1.2.3</p>
+                        <code>semtag undo</code>
+                        <span>Remove latest tag</span>
+                        <span class="dim">Interactive confirmation</span>
+                    </div>
+                    <div class="usage-item">
+                        <code>semtag diff v1.0.0</code>
+                        <span>API diff vs HEAD</span>
+                        <span class="dim">Suggests major/minor/patch</span>
                     </div>
                 </div>
 
-                <div class="options-section">
-                    <h3 class="subsection-title">Options</h3>
-                    <div class="options-list">
-                        <div class="option-item">
-                            <code class="option-flag">--repo, -r</code>
-                            <span class="option-description">Path to the repository</span>
-                        </div>
-                        <div class="option-item">
-                            <code class="option-flag">--verbose, -v</code>
-                            <span class="option-description">Print verbose output</span>
-                        </div>
-                        <div class="option-item">
-                            <code class="option-flag">--local, -l</code>
-                            <span class="option-description">Don't error if no remotes found</span>
-                        </div>
-                        <div class="option-item">
-                            <code class="option-flag">--brave, -b</code>
-                            <span class="option-description">Skip all confirmation prompts</span>
-                        </div>
-                        <div class="option-item">
-                            <code class="option-flag">--no-color</code>
-                            <span class="option-description">Disable colorful output</span>
-                        </div>
-                        <div class="option-item">
-                            <code class="option-flag">--version</code>
-                            <span class="option-description">Print version information</span>
-                        </div>
-                    </div>
+                <h3>Flags</h3>
+                <div class="flags-list">
+                    <div class="flag-item"><code>-r, --repo</code><span>Repository path</span></div>
+                    <div class="flag-item"><code>--prefix</code><span>Tag prefix for multi-module</span></div>
+                    <div class="flag-item"><code>-l, --local</code><span>Skip remote operations</span></div>
+                    <div class="flag-item"><code>-b, --brave</code><span>Skip checks and confirmations</span></div>
+                    <div class="flag-item"><code>--no-color</code><span>Disable colors</span></div>
+                    <div class="flag-item"><code>--no-tty</code><span>Disable interactive prompts</span></div>
+                    <div class="flag-item"><code>--json</code><span>JSON output to stdout</span></div>
+                    <div class="flag-item"><code>--verbose</code><span>Debug output</span></div>
                 </div>
             </div>
         </section>
 
-        <section id="features" class="section features-section">
+        <section id="features" class="section">
             <div class="container">
-                <h2 class="section-title">Features</h2>
-
-                <div class="features-list">
-                    <div class="feature-item">
-                        <h3 class="feature-title">Auto-Detection</h3>
-                        <p class="feature-description">Automatically detects and increments from the latest git tag</p>
+                <h2>Features</h2>
+                <div class="features-grid">
+                    <div class="feature">
+                        <h3>Minimal</h3>
+                        <p>Built on Go stdlib with slog, flag, and os/exec. No cobra, no framework bloat.</p>
                     </div>
-
-                    <div class="feature-item">
-                        <h3 class="feature-title">Branch Validation</h3>
-                        <p class="feature-description">Validates you're on a default branch (main, master, etc.)</p>
+                    <div class="feature">
+                        <h3>Multi-Module</h3>
+                        <p>Native support for Go multi-module repos with prefix tags like <code>pkg/semver/v1.2.3</code>.</p>
                     </div>
-
-                    <div class="feature-item">
-                        <h3 class="feature-title">Change Detection</h3>
-                        <p class="feature-description">Checks for uncommitted changes and remote synchronization</p>
+                    <div class="feature">
+                        <h3>API Diff</h3>
+                        <p>Compare Go API surfaces between versions. Suggests major/minor/patch based on breaking changes.</p>
                     </div>
-
-                    <div class="feature-item">
-                        <h3 class="feature-title">Automatic Pushing</h3>
-                        <p class="feature-description">Creates and pushes git tags using semantic versioning</p>
+                    <div class="feature">
+                        <h3>Safe Worktrees</h3>
+                        <p>API diffs run in temporary git worktrees. Your working directory is never touched.</p>
                     </div>
-
-                    <div class="feature-item">
-                        <h3 class="feature-title">Version Rollback</h3>
-                        <p class="feature-description">Easily remove the most recent version tag when needed</p>
+                    <div class="feature">
+                        <h3>Structured Logging</h3>
+                        <p>Powered by slog with a custom handler. Styled terminal output + JSON for CI/scripts.</p>
                     </div>
-
-                    <div class="feature-item">
-                        <h3 class="feature-title">Colorful Output</h3>
-                        <p class="feature-description">Visually appealing terminal feedback with status indicators</p>
+                    <div class="feature">
+                        <h3>TTY Aware</h3>
+                        <p>Auto-detects terminal capabilities. Colors, spinners, and prompts adapt or degrade gracefully.</p>
                     </div>
-
-                    <div class="feature-item">
-                        <h3 class="feature-title">Tag Sync</h3>
-                        <p class="feature-description">Automatically detects and fetches new tags from remote</p>
+                    <div class="feature">
+                        <h3>Pre-flight Checks</h3>
+                        <p>Validates branch, uncommitted changes, remote sync, and unfetched tags before any operation.</p>
                     </div>
-
-                    <div class="feature-item">
-                        <h3 class="feature-title">Brave Mode</h3>
-                        <p class="feature-description">Bypass warnings and continue operations for advanced users</p>
+                    <div class="feature">
+                        <h3>Brave Mode</h3>
+                        <p>Skip all checks and prompts for CI/automation with a single <code>--brave</code> flag.</p>
                     </div>
                 </div>
             </div>
@@ -211,172 +172,50 @@ brew install flaticols/apps/bump</code></pre>
 
         <section id="examples" class="section">
             <div class="container">
-                <h2 class="section-title">Examples</h2>
+                <h2>Examples</h2>
 
-                <div class="examples-list">
-                    <div class="example-item">
-                        <h3 class="example-title">Standard Version Bumping</h3>
-                        <p class="example-description">Increment the patch version number</p>
-                        <pre class="code-block"><code>$ bump
-● on default branch: main
-● no uncommitted changes
-● no remote changes
-● no unpushed changes
-● no new remote tags
-● bump tag v1.2.3 → v1.2.4
-● tag v1.2.4 created
-● tag v1.2.4 pushed</code></pre>
-                    </div>
-
-                    <div class="example-item">
-                        <h3 class="example-title">Major Version for Breaking Changes</h3>
-                        <p class="example-description">Increment the major version for breaking changes</p>
-                        <pre class="code-block"><code>$ bump major
-● on default branch: main
-● no uncommitted changes
-● no remote changes
-● no unpushed changes
-● no new remote tags
-● bump tag v1.2.3 → v2.0.0
-● tag v2.0.0 created
-● tag v2.0.0 pushed</code></pre>
-                    </div>
-
-                    <div class="example-item">
-                        <h3 class="example-title">Using a Different Repository</h3>
-                        <p class="example-description">Specify a different repository path</p>
-                        <pre class="code-block"><code>$ bump --repo=/path/to/repo minor
-● working directory: /path/to/repo
-● on default branch: main
-● no uncommitted changes
-● no remote changes
-● no unpushed changes
-● no new remote tags
-● bump tag v1.2.3 → v1.3.0
-● tag v1.3.0 created
-● tag v1.3.0 pushed</code></pre>
-                    </div>
-
-                    <div class="example-item">
-                        <h3 class="example-title">Using Brave Mode</h3>
-                        <p class="example-description">Skip all confirmation prompts with brave mode</p>
-                        <pre class="code-block"><code>$ bump undo --brave
-● brave mode enabled
-● removing tag v1.2.4
-● local tag removed
-● remote tag removed</code></pre>
-                    </div>
+                <div class="example">
+                    <h3>Multi-Module Repo</h3>
+                    <pre class="terminal"><code><span class="t-prompt">$</span> semtag minor pkg/semver
+<span class="t-ok">●</span> on default branch (main)
+<span class="t-ok">●</span> no uncommitted changes
+<span class="t-ok">●</span> no remote changes
+<span class="t-ok">●</span> no unpushed changes
+<span class="t-ok">●</span> no new remote tags
+<span class="t-ok">●</span> bump tag pkg/semver/v1.0.0 => pkg/semver/v1.1.0
+<span class="t-ok">●</span> tag pkg/semver/v1.1.0 created
+<span class="t-ok">●</span> tag pkg/semver/v1.1.0 pushed</code></pre>
                 </div>
-            </div>
-        </section>
 
-        <section id="changelog" class="section">
-            <div class="container">
-                <h2 class="section-title">Changelog</h2>
+                <div class="example">
+                    <h3>API Diff</h3>
+                    <pre class="terminal"><code><span class="t-prompt">$</span> semtag diff v0.0.6 v0.0.7
+<span class="t-ok">●</span> comparing API: v0.0.6 -> v0.0.7
 
-                <p class="section-intro">Track the development progress of Bump. For a full changelog, visit <a href="https://github.com/flaticols/bump/blob/main/CHANGELOG.md" target="_blank" rel="noopener">CHANGELOG.md</a> on GitHub.</p>
+github.com/flaticols/bump/semver
+  Incompatible changes:
+    - removed: ParseStrict
+  Compatible changes:
+    + added: ExpandPartialVersion
+    + added: ParseConstraintSet
 
-                <div class="changelog-list">
-                    <details class="changelog-item" open>
-                        <summary class="changelog-summary">
-                            <span class="version">v0.0.7</span>
-                            <span class="date">March 29, 2025</span>
-                        </summary>
-                        <div class="changelog-content">
-                            <div class="change-group">
-                                <div class="change-type added">Added</div>
-                                <ul>
-                                    <li>Implementation of full semver spec v2</li>
-                                </ul>
-                            </div>
-                            <div class="change-group">
-                                <div class="change-type fixed">Fixed</div>
-                                <ul>
-                                    <li>Improvement of latest semver tag detection (thanks to <a href="https://github.com/emicklei" target="_blank" rel="noopener">@emicklei</a>)</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </details>
+<span class="t-ok">●</span> summary: 1 breaking, 2 compatible
+<span class="t-ok">●</span> suggested bump: major</code></pre>
+                </div>
 
-                    <details class="changelog-item">
-                        <summary class="changelog-summary">
-                            <span class="version">v0.0.6</span>
-                            <span class="date">March 27, 2025</span>
-                        </summary>
-                        <div class="changelog-content">
-                            <div class="change-group">
-                                <div class="change-type added">Added</div>
-                                <ul>
-                                    <li>Improved help documentation with examples and better descriptions</li>
-                                    <li>Version increment arguments (<code>major</code>, <code>minor</code>, <code>patch</code>) now visible in help text</li>
-                                    <li>Added CHANGELOG.md to track version history</li>
-                                    <li>Added Changelog section to documentation website</li>
-                                </ul>
-                            </div>
-                            <div class="change-group">
-                                <div class="change-type changed">Changed</div>
-                                <ul>
-                                    <li>Better command usage descriptions in help text</li>
-                                    <li>Example commands now more clearly show their purpose</li>
-                                    <li>Updated undo command documentation with usage examples</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </details>
-
-                    <details class="changelog-item">
-                        <summary class="changelog-summary">
-                            <span class="version">v0.0.5</span>
-                            <span class="date">March 20, 2025</span>
-                        </summary>
-                        <div class="changelog-content">
-                            <div class="change-group">
-                                <div class="change-type added">Added</div>
-                                <ul>
-                                    <li>New <code>HasRemoteUnfetchedTags()</code> function to detect and fetch new tags from remote repositories</li>
-                                    <li>Automatic tag fetching from remote before performing operations</li>
-                                    <li>"Brave mode" flag (<code>--brave</code>, <code>-b</code>) to bypass warnings and continue operations</li>
-                                    <li>Improved error handling with consistent exit behavior</li>
-                                </ul>
-                            </div>
-                            <div class="change-group">
-                                <div class="change-type changed">Changed</div>
-                                <ul>
-                                    <li>Updated output format to use bullet points (●) instead of symbols (✓, ⚠, ✗)</li>
-                                    <li>Revised documentation with new output examples</li>
-                                    <li>Updated README and HTML documentation to reflect the new features and output format</li>
-                                    <li>Improved messaging for tag operations</li>
-                                </ul>
-                            </div>
-                            <div class="change-group">
-                                <div class="change-type fixed">Fixed</div>
-                                <ul>
-                                    <li>Better handling of repositories without remotes</li>
-                                    <li>Consistent error messaging</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </details>
-
-                    <details class="changelog-item">
-                        <summary class="changelog-summary">
-                            <span class="version">v0.0.4</span>
-                            <span class="date">March 15, 2025</span>
-                        </summary>
-                        <div class="changelog-content">
-                            <div class="change-group">
-                                <div class="change-type added">Added</div>
-                                <ul>
-                                    <li>Initial public release</li>
-                                    <li>Basic semantic versioning command-line functionality</li>
-                                    <li>Support for major, minor, and patch version bumping</li>
-                                    <li>Tag creation and pushing to remote repositories</li>
-                                    <li>Undo command for removing the latest tag</li>
-                                    <li>Validation for repository state before operations</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </details>
+                <div class="example">
+                    <h3>JSON Output for CI</h3>
+                    <pre class="terminal"><code><span class="t-prompt">$</span> semtag --json --brave 2>/dev/null | jq
+{
+  "time": "2025-03-29T10:15:30Z",
+  "level": "INFO",
+  "msg": "bump tag v1.2.3 => v1.2.4"
+}
+{
+  "time": "2025-03-29T10:15:30Z",
+  "level": "INFO",
+  "msg": "tag v1.2.4 created"
+}</code></pre>
                 </div>
             </div>
         </section>
@@ -384,52 +223,22 @@ brew install flaticols/apps/bump</code></pre>
 
     <footer class="site-footer">
         <div class="container">
-            <div class="footer-content">
-                <p class="footer-text">
-                    Bump CLI © 2025 by <a href="https://github.com/flaticols" target="_blank" rel="noopener">Denis Panfilov</a> • MIT License • <span class="version-badge">v0.0.7</span>
-                </p>
-                <div class="footer-links">
-                    <a href="https://github.com/flaticols/bump" target="_blank" rel="noopener">GitHub</a>
-                    <a href="https://github.com/flaticols/bump/blob/main/README.md" target="_blank" rel="noopener">Docs</a>
-                    <a href="https://github.com/flaticols/bump/issues" target="_blank" rel="noopener">Issues</a>
-                </div>
-            </div>
+            <p>semtag &copy; 2025 <a href="https://github.com/flaticols">Denis Panfilov</a> &middot; MIT License</p>
         </div>
     </footer>
 
     <script>
-        // Header scroll behavior
         const header = document.querySelector('.site-header');
-        let lastScroll = 0;
-        const scrollThreshold = 100;
-
         window.addEventListener('scroll', () => {
-            const currentScroll = window.pageYOffset;
-
-            if (currentScroll > scrollThreshold) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
-
-            lastScroll = currentScroll;
+            header.classList.toggle('scrolled', window.pageYOffset > 80);
         });
-
-        // Smooth scroll for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                const href = this.getAttribute('href');
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', e => {
+                const href = a.getAttribute('href');
                 if (href === '#') return;
-
                 e.preventDefault();
-                const target = document.querySelector(href);
-                if (target) {
-                    const offsetTop = target.offsetTop - 80;
-                    window.scrollTo({
-                        top: offsetTop,
-                        behavior: 'smooth'
-                    });
-                }
+                const t = document.querySelector(href);
+                if (t) window.scrollTo({ top: t.offsetTop - 64, behavior: 'smooth' });
             });
         });
     </script>
