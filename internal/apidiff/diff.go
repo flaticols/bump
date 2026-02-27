@@ -7,6 +7,7 @@ package apidiff
 import (
 	"fmt"
 	"go/types"
+	"log/slog"
 	"strings"
 
 	"github.com/flaticols/bump/internal/git"
@@ -72,36 +73,34 @@ func Compare(oldRef, newRef string) (*Report, error) {
 	if err != nil {
 		return nil, fmt.Errorf("worktree for %s: %w", oldRef, err)
 	}
-	defer oldWT.Remove()
+	defer removeWorktree(oldWT)
 
-	var newPath string
-	if newRef == "" || newRef == "HEAD" {
-		newWT, err := git.CreateTempWorktree("HEAD")
-		if err != nil {
-			return nil, fmt.Errorf("worktree for HEAD: %w", err)
-		}
-		defer newWT.Remove()
-		newPath = newWT.Path
-	} else {
-		newWT, err := git.CreateTempWorktree(newRef)
-		if err != nil {
-			return nil, fmt.Errorf("worktree for %s: %w", newRef, err)
-		}
-		defer newWT.Remove()
-		newPath = newWT.Path
+	if newRef == "" {
+		newRef = "HEAD"
 	}
+	newWT, err := git.CreateTempWorktree(newRef)
+	if err != nil {
+		return nil, fmt.Errorf("worktree for %s: %w", newRef, err)
+	}
+	defer removeWorktree(newWT)
 
 	oldPkgs, err := loadTypedPackages(oldWT.Path)
 	if err != nil {
 		return nil, fmt.Errorf("load packages from %s: %w", oldRef, err)
 	}
 
-	newPkgs, err := loadTypedPackages(newPath)
+	newPkgs, err := loadTypedPackages(newWT.Path)
 	if err != nil {
 		return nil, fmt.Errorf("load packages from %s: %w", newRef, err)
 	}
 
 	return comparePackages(oldPkgs, newPkgs), nil
+}
+
+func removeWorktree(wt *git.Worktree) {
+	if err := wt.Remove(); err != nil {
+		slog.Warn("failed to remove worktree", "path", wt.Path, "err", err)
+	}
 }
 
 func loadTypedPackages(dir string) (map[string]*types.Package, error) {

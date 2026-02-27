@@ -30,14 +30,14 @@ func CreateTempWorktree(ref string) (*Worktree, error) {
 	return &Worktree{Path: dir, Ref: ref}, nil
 }
 
-// Remove cleans up the worktree directory and prunes the git worktree list.
+// Remove cleans up the worktree directory and its git metadata.
 func (w *Worktree) Remove() error {
-	if err := os.RemoveAll(w.Path); err != nil {
-		return fmt.Errorf("remove worktree dir: %w", err)
-	}
-	cmd := exec.Command("git", "worktree", "prune")
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("prune worktrees: %w", err)
+	cmd := exec.Command("git", "worktree", "remove", "--force", w.Path)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		// Fallback: manual cleanup if the command fails (e.g. older git).
+		os.RemoveAll(w.Path)
+		exec.Command("git", "worktree", "prune").Run() //nolint:errcheck
+		return fmt.Errorf("remove worktree %s: %s: %w", w.Path, string(out), err)
 	}
 	return nil
 }
